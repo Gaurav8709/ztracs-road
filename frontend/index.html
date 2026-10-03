@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Z-TRACS Road Intelligence | Rodic InfraAI Innovation Challenge 2026</title>
+  
+  <!-- Vendored Core Libraries (Local & Pinned) -->
+  <!-- Tailwind Play Script (Vendored 3.4) -->
+  <script src="./vendor/tailwind/tailwind.js"></script>
+  
+  <!-- Leaflet 1.9.4 CSS & JS -->
+  <link rel="stylesheet" href="./vendor/leaflet/leaflet.css"/>
+  <script src="./vendor/leaflet/leaflet.js"></script>
+  
+  <!-- Chart.js 4.4.1 -->
+  <script src="./vendor/chartjs/chart.umd.min.js"></script>
+
+  <!-- Lucide Icons 0.344.0 -->
+  <script src="./vendor/lucide/lucide.min.js"></script>
+
+  <!-- Custom Design Tokens & Styles -->
+  <link rel="stylesheet" href="./css/style.css">
+  <script src="./js/config.js"></script>
+  <script src="./js/tailwind.config.js"></script>
+</head>
+<body class="bg-[#090d16] text-slate-100 flex flex-col min-h-screen">
+
+  <!-- ================= TOP NAVIGATION BAR ================= -->
+  <header class="border-b border-slate-800 bg-[#0c1222]/90 backdrop-blur-md sticky top-0 z-50 px-6 py-3">
+    <div class="max-w-7xl mx-auto flex items-center justify-between">
+      
+      <!-- Brand & Competition Tagline -->
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-lg bg-gradient-to-tr from-sky-600 to-cyan-400 flex items-center justify-center font-black text-xl text-slate-950 shadow-lg shadow-cyan-500/20">
+          Z
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="font-extrabold text-lg tracking-tight bg-gradient-to-r from-slate-100 via-sky-200 to-cyan-400 bg-clip-text text-transparent">
+              Z-TRACS
+            </span>
+            <span class="text-xs font-mono font-bold px-2 py-0.5 rounded bg-sky-950 text-sky-400 border border-sky-800">
+              ROAD INTELLIGENCE
+            </span>
+          </div>
+          <p class="text-[10px] text-slate-400 font-medium">Rodic InfraAI Challenge 2026 // Theme 02: Roads, Bridges & Tunnels</p>
+        </div>
+      </div>
+
+      <!-- Navigation Tabs (The 5 Main Screens per Section 39) -->
+      <nav class="hidden md:flex items-center gap-1 bg-slate-900/80 p-1 rounded-xl border border-slate-800">
+        <button class="nav-tab active" data-screen="screen-command">
+          <span>Command Center</span>
+        </button>
+        <button class="nav-tab" id="nav-tab-new-survey" data-screen="screen-new-inspection">
+          <span>+ New Survey</span>
+        </button>
+        <button class="nav-tab" data-screen="screen-live">
+          <span>Live Pipeline</span>
+        </button>
+        <button class="nav-tab" data-screen="screen-map">
+          <span>GIS Map</span>
+        </button>
+        <button class="nav-tab" data-screen="screen-evidence">
+          <span>Evidence & Video Sync</span>
+        </button>
+              <button class="nav-tab hidden" id="nav-tab-users" data-screen="screen-users">
+          <span>Users</span>
+        </button>
+      </nav>
+
+      <!-- Right Header Actions (Demo Mode & Role Switcher) -->
+      <div class="flex items-center gap-3">
+        
+        <!-- Section 38 Demo Mode Button -->
+        <button id="btn-demo-mode" class="px-3.5 py-1.5 rounded-lg bg-gradient-to-r from-amber-500/20 to-orange-500/20 hover:from-amber-500/30 hover:to-orange-500/30 text-amber-300 border border-amber-500/40 text-xs font-bold flex items-center gap-1.5 shadow-sm transition">
+          <span>⚡</span>
+          <span>Golden Demo (DEMO-001)</span>
+        </button>
+
+        <!-- User Profile & Real Role Badge & Logout (Requirement 4) -->
+        <div id="user-profile-badge" class="flex items-center gap-2 bg-slate-800/80 px-3 py-1.5 rounded-lg border border-slate-700 text-xs">
+          <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+          <span id="active-user-name" class="font-bold text-slate-200">admin</span>
+          <span id="active-role-badge" class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-cyan-950 text-cyan-400 border border-cyan-800 uppercase">ADMIN</span>
+          <button id="btn-logout"  class="ml-1 text-slate-400 hover:text-red-400 font-semibold transition" title="Log out">
+            Logout
+          </button>
+        </div>
+
+        <!-- Alert Bell (Section 25) -->
+        <button data-nav="screen-evidence" class="relative p-2 rounded-lg bg-slate-800/60 hover:bg-slate-800 text-slate-300 hover:text-white transition">
+          <span class="text-sm">🔔</span>
+          <span id="alert-badge" class="absolute -top-1 -right-1 bg-red-500 text-white font-black text-[9px] w-4 h-4 rounded-full flex items-center justify-center animate-pulse">
+            1
+          </span>
+        </button>
+
+      </div>
+    </div>
+  </header>
+
+  <!-- ================= CRITICAL ALERT BANNER (Section 25) ================= -->
+  <div id="critical-alert-banner" class="hidden bg-gradient-to-r from-red-950/90 via-slate-900/90 to-red-950/90 border-b border-red-500/50 py-2.5 px-6">
+    <div class="max-w-7xl mx-auto flex items-center justify-between text-xs">
+      <div class="flex items-center gap-2.5 text-red-200 font-medium">
+        <span class="px-2 py-0.5 rounded bg-red-600 text-white font-extrabold text-[10px] tracking-wider animate-pulse">CRITICAL ALERT</span>
+        <span id="banner-alert-msg">CRITICAL DEFECT DETECTED on RD-014: Pothole depth > 60mm in center travel lane.</span>
+      </div>
+      <button data-nav="screen-evidence" class="px-3 py-1 rounded bg-red-500 hover:bg-red-600 text-white font-bold text-xs shadow-md transition">
+        View Evidence & Seek Video →
+      </button>
+    </div>
+  </div>
+
+  <!-- ================= MAIN CONTENT WRAPPER ================= -->
+  <main class="flex-1 max-w-7xl w-full mx-auto p-6 space-y-6">
+
+    <!-- ================= SCREEN 1: COMMAND CENTER (Section 20, 21, 39) ================= -->
+    <section id="screen-command" class="screen-view space-y-6">
+      
+      <!-- Top Overview Header -->
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 class="text-2xl font-black tracking-tight text-white flex items-center gap-2">
+            <span>Infrastructure Command Center</span>
+            <span class="text-xs px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 font-mono font-normal">Active: NH-48 Expressway</span>
+          </h1>
+          <p class="text-sm text-slate-400 mt-0.5">Continuous automated road surface anomaly perception and operational risk scoring.</p>
+        </div>
+        <div class="flex items-center gap-3">
+          <button id="btn-initiate-inspection" data-nav="screen-new-inspection" class="admin-only px-4 py-2 rounded-lg bg-sky-600 hover:bg-sky-500 font-bold text-xs text-white shadow-lg shadow-sky-600/20 transition flex items-center gap-2">
+            <span>+</span> Initiate Inspection
+          </button>
+          <button data-download-report="DEMO-001" class="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 font-semibold text-xs text-slate-200 border border-slate-700 transition flex items-center gap-1.5">
+            <span>📄</span> Export Inspection PDF
+          </button>
+        </div>
+      </div>
+
+      <!-- 5 Mission Telemetry KPI Cards (Section 20) -->
+      <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+        
+        <div class="glass-panel p-4 flex flex-col justify-between">
+          <span class="text-xs text-slate-400 font-medium">Inspected Distance</span>
+          <div class="my-2">
+            <span id="kpi-inspected-distance" class="text-2xl font-black text-white font-mono">10.0 KM</span>
+          </div>
+          <span class="text-[11px] text-emerald-400 font-medium flex items-center gap-1">
+            <span>↑ 100%</span> corridor scanned
+          </span>
+        </div>
+
+        <div class="glass-panel p-4 flex flex-col justify-between">
+          <span class="text-xs text-slate-400 font-medium">Total Defects Detected</span>
+          <div class="my-2">
+            <span id="kpi-total-defects" class="text-2xl font-black text-cyan-400 font-mono">24</span>
+          </div>
+          <span class="text-[11px] text-slate-400 font-mono">2.4 defects / km</span>
+        </div>
+
+        <div class="glass-panel p-4 flex flex-col justify-between border-red-500/30 bg-red-950/10">
+          <span class="text-xs text-red-300 font-medium">Critical Defects (P1)</span>
+          <div class="my-2">
+            <span id="kpi-critical-defects" class="text-2xl font-black text-red-400 font-mono">2</span>
+          </div>
+          <span class="text-[11px] text-red-400 font-semibold animate-pulse">Needs immediate repair</span>
+        </div>
+
+        <div class="glass-panel p-4 flex flex-col justify-between border-orange-500/30">
+          <span class="text-xs text-orange-300 font-medium">High Risk Segments</span>
+          <div class="my-2">
+            <span id="kpi-high-risk-segs" class="text-2xl font-black text-orange-400 font-mono">3</span>
+          </div>
+          <span class="text-[11px] text-orange-400 font-medium">RD-014, RD-008, RD-004</span>
+        </div>
+
+        <div class="glass-panel p-4 flex flex-col justify-between">
+          <span class="text-xs text-slate-400 font-medium">Average Condition</span>
+          <div class="my-2">
+            <span id="kpi-avg-condition" class="text-2xl font-black text-emerald-400 font-mono">78.4/100</span>
+          </div>
+          <span class="text-[11px] text-slate-400 font-medium">PoC condition score</span>
+        </div>
+
+      </div>
+
+      <!-- Analytics Charts Row (Section 21) -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        
+        <!-- Defect Distribution Doughnut -->
+        <div class="glass-panel p-5">
+          <div class="flex items-center justify-between mb-3">
+            <h2 class="text-xs font-bold uppercase tracking-wider text-slate-300">Defect Distribution</h2>
+            <span class="text-[10px] font-mono text-cyan-400 font-semibold">AI CLASSIFICATION</span>
+          </div>
+          <div class="h-52 relative">
+            <canvas id="chart-defect-dist"></canvas>
+          </div>
+        </div>
+
+        <!-- Severity Distribution Bar Chart -->
+        <div class="glass-panel p-5">
+          <div class="flex items-center justify-between mb-3">
+            <h2 class="text-xs font-bold uppercase tracking-wider text-slate-300">Severity Tiers</h2>
+            <span class="text-[10px] font-mono text-red-400 font-semibold">P1 - P4 BREAKDOWN</span>
+          </div>
+          <div class="h-52 relative">
+            <canvas id="chart-severity"></canvas>
+          </div>
+        </div>
+
+        <!-- Defects Per Kilometer -->
+        <div class="glass-panel p-5">
+          <div class="flex items-center justify-between mb-3">
+            <h2 class="text-xs font-bold uppercase tracking-wider text-slate-300">Defects Per Kilometer</h2>
+            <span class="text-[10px] font-mono text-slate-400 font-semibold">CORRIDOR DENSITY</span>
+          </div>
+          <div class="h-52 relative">
+            <canvas id="chart-density"></canvas>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Active Surveys & Inspections Table -->
+      <div class="glass-panel p-5 space-y-4">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <h2 class="text-sm font-bold text-white uppercase tracking-wider">Survey & Inspection Operations</h2>
+            
+          </div>
+          <span class="text-xs text-slate-400 font-mono">Role: <span id="active-role-label" class="text-cyan-400 font-bold">Admin</span></span>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="border-b border-slate-800 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                <th class="py-2.5 px-4">Inspection ID</th>
+                <th class="py-2.5 px-4">Survey Name</th>
+                <th class="py-2.5 px-4">Corridor / Road</th>
+                <th class="py-2.5 px-4">Model</th>
+                <th class="py-2.5 px-4">Lifecycle Status</th>
+                <th class="py-2.5 px-4">Defects</th>
+                <th class="py-2.5 px-4">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="inspections-table-body">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- AI Perception Models Registry Panel (Section 28) -->
+      <div class="glass-panel p-5 space-y-4">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <h2 class="text-sm font-bold text-white uppercase tracking-wider">AI Perception Models Registry</h2>
+            <span class="text-xs px-2 py-0.5 rounded-full bg-cyan-950 text-cyan-400 border border-cyan-800 font-mono">CV Inference</span>
+          </div>
+          <span class="text-xs text-slate-400 font-mono">Active Engine: <span class="text-emerald-400 font-bold">Mock CV Engine</span></span>
+        </div>
+        <div id="models-registry-list" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <!-- Dynamically populated from GET /api/models -->
+        </div>
+      </div>
+
+    </section>
+
+
+    <!-- ================= SCREEN 2: NEW INSPECTION (Section 5, 7, 39) ================= -->
+    <section id="screen-new-inspection" class="screen-view hidden max-w-3xl mx-auto space-y-6">
+      
+      <div class="border-b border-slate-800 pb-4">
+        <h1 class="text-2xl font-black text-white">Create New Road Inspection</h1>
+        <p class="text-sm text-slate-400">Configure parameters, select CV vision models, and ingest survey footage.</p>
+      </div>
+
+      <form id="form-new-inspection" class="glass-panel p-6 space-y-5">
+        
+        <div>
+          <label class="block text-xs font-bold uppercase text-slate-400 mb-1.5">Inspection Survey Name</label>
+          <input type="text" id="form-inspection-name" required value="NH-48 Live Mobile Survey — September 2026"
+                 class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-cyan-500 font-medium">
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-bold uppercase text-slate-400 mb-1.5">Inspection Date</label>
+            <input type="date" id="form-inspection-date" required value="2026-09-30"
+                   class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-cyan-500 font-mono">
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold uppercase text-slate-400 mb-1.5">Location / Corridor Description</label>
+            <input type="text" id="form-location" required value="NH-48 Km 0.0 - 10.0 (Panvel to Wakad)"
+                   class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-cyan-500">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-bold uppercase text-slate-400 mb-1.5">Road Corridor / Segment</label>
+            <select id="form-road-id" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-cyan-500">
+              <option value="RD-NH48">NH-48 Corridor (Mumbai–Pune Expressway section)</option>
+              <option value="RD-NH08">NH-08 Delhi–Jaipur Express Corridor</option>
+              <option value="RD-NE01">NE-01 Ahmedabad–Vadodara Expressway</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold uppercase text-slate-400 mb-1.5">Imagery Source</label>
+            <select id="form-source-type" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-cyan-500">
+              <option value="Vehicle Camera">Vehicle Dashcam / Survey Fleet</option>
+              <option value="Drone / UAV">Drone / UAV Autonomous Flyover</option>
+              <option value="Fixed Road Camera">Fixed Highway CCTV Camera</option>
+              <option value="RTSP Stream">Live RTSP / IP Camera Stream</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-bold uppercase text-slate-400 mb-1.5">AI Perception Model Version (Section 28)</label>
+            <select id="form-model-version" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3.5 py-2.5 text-sm text-cyan-400 font-mono focus:outline-none focus:border-cyan-500">
+              <option value="RoadDefect-v1.0">RoadDefect-v1.0 (Mock CV Service)</option>
+              <option value="RoadDefect-v1.1">RoadDefect-v1.1 (High-Recall Cracks — Mock CV)</option>
+              <option value="RoadDefect-v1.2">RoadDefect-v1.2 (Multi-Modal Depth — Mock CV)</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-xs font-bold uppercase text-slate-400 mb-1.5">Processing Mode</label>
+            <select id="form-proc-mode" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-cyan-500">
+              <option value="Batch" selected>Batch Asynchronous Processing</option>
+              <option value="RTSP">Live Edge Stream / RTSP Processing</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Video Upload Dropzone (Section 7) -->
+        <div id="video-upload-section">
+          <label class="block text-xs font-bold uppercase text-slate-400 mb-1.5">Video Upload (MP4 / MOV)</label>
+          <div id="video-upload-dropzone" class="border-2 border-dashed border-slate-700 hover:border-cyan-500 rounded-xl p-6 text-center cursor-pointer bg-slate-900/50 transition">
+            <input type="file" id="form-video-file" accept="video/mp4,video/quicktime,.mp4,.mov" class="hidden">
+            <div id="dropzone-prompt">
+              <div class="text-3xl mb-2">📹</div>
+              <p class="text-sm font-semibold text-slate-200">Drag & drop road footage here, or click to browse</p>
+              <p class="text-xs text-slate-500 mt-1">Supports MP4, MOV. Pre-loaded demo footage will be processed automatically if empty.</p>
+            </div>
+            <div id="dropzone-file-info" class="hidden flex items-center justify-between bg-slate-800/80 border border-slate-700 rounded-lg p-3">
+              <div class="flex items-center gap-3">
+                <span class="text-2xl">🎬</span>
+                <div class="text-left">
+                  <div id="dropzone-filename" class="text-sm font-bold text-cyan-400 font-mono"></div>
+                  <div id="dropzone-filesize" class="text-xs text-slate-400 font-mono"></div>
+                </div>
+              </div>
+              <button type="button" id="btn-remove-video" class="px-2.5 py-1 bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/40 rounded text-xs font-semibold transition">
+                Remove
+              </button>
+            </div>
+          </div>
+          <div id="upload-error-msg" class="hidden text-xs text-red-400 mt-1.5 font-semibold"></div>
+        </div>
+
+        <!-- RTSP Stream Input Container -->
+        <div id="rtsp-url-container" class="hidden p-5 bg-cyan-950/30 border border-cyan-500/40 rounded-xl space-y-3">
+          <div class="flex items-center gap-2 text-cyan-400 font-bold text-xs uppercase tracking-wider">
+            <span>📡</span> Live RTSP Camera Feed Configuration
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">RTSP Stream Network URL</label>
+            <input type="text" id="form-rtsp-url" placeholder="rtsp://admin:password@192.168.1.100:554/live"
+                   class="w-full bg-slate-950 border border-cyan-500/50 rounded-lg px-3.5 py-2.5 text-sm text-cyan-300 font-mono focus:outline-none focus:border-cyan-400">
+            <p class="text-[11px] text-slate-400 mt-1">Direct RTSP feed URL from IP camera, highway CCTV, or live drone receiver.</p>
+          </div>
+        </div>
+
+
+        <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
+          <button type="button" data-nav="screen-command" class="px-4 py-2.5 rounded-lg bg-slate-800 text-slate-300 font-semibold text-sm hover:bg-slate-700 transition">
+            Cancel
+          </button>
+          <button type="submit" class="px-6 py-2.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-bold text-sm shadow-lg shadow-cyan-500/20 transition flex items-center gap-2">
+            <span>🚀</span> Start Inspection Pipeline
+          </button>
+        </div>
+
+      </form>
+
+    </section>
+
+
+    <!-- ================= SCREEN 3: LIVE / BATCH PROCESSING STATUS (Section 6, 11, 33, 39) ================= -->
+    <section id="screen-live" class="screen-view hidden space-y-6">
+      
+      <div class="border-b border-slate-800 pb-4 flex items-center justify-between">
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="text-2xl font-black text-white">Asynchronous AI Processing Pipeline</h1>
+            <span id="live-tracker-id" class="px-2.5 py-0.5 rounded font-mono font-bold text-xs bg-cyan-950 text-cyan-400 border border-cyan-800">
+              INS-001
+            </span>
+            <span id="live-mock-badge" class="px-2.5 py-0.5 rounded font-mono font-bold text-xs bg-amber-950 text-amber-300 border border-amber-800 uppercase">
+              MOCK CV
+            </span>
+          </div>
+          <p class="text-sm text-slate-400 mt-1">Multi-stage pipeline: Video Extraction → CV Inference → Road Segment Geo-referencing → Risk Aggregation</p>
+        </div>
+
+        <button id="btn-live-view-results" data-nav="screen-map" class="hidden px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-lg shadow-lg shadow-emerald-600/30 transition flex items-center gap-2">
+          <span>🗺️</span> View Completed Map & Detections
+        </button>
+      </div>
+
+      <!-- Main Progress Bar (Section 11) -->
+      <div class="glass-panel p-6 space-y-4">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <span class="text-sm font-semibold text-slate-300">Pipeline Status:</span>
+            <span id="live-current-stage" class="text-sm font-bold text-cyan-400 font-mono">Initializing worker...</span>
+          </div>
+          <span id="live-progress-pct" class="text-2xl font-black font-mono text-cyan-400">0%</span>
+        </div>
+
+        <div class="w-full bg-slate-800 h-4 rounded-full overflow-hidden p-0.5 border border-slate-700">
+          <div id="live-progress-bar" class="h-full bg-gradient-to-r from-cyan-500 to-sky-400 rounded-full transition-all duration-300" style="width: 0%"></div>
+        </div>
+
+        <!-- Telemetry Numbers (Section 11 & 33) -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 pt-2">
+          <div class="bg-slate-900/60 p-3 rounded-lg border border-slate-800">
+            <span class="text-[11px] text-slate-400 block font-medium">Frames Ingested</span>
+            <span id="live-frames-count" class="text-lg font-mono font-bold text-slate-200">0 / 12,000</span>
+          </div>
+          <div class="bg-slate-900/60 p-3 rounded-lg border border-slate-800">
+            <span class="text-[11px] text-slate-400 block font-medium">Anomalies Detected</span>
+            <span id="live-defects-count" class="text-lg font-mono font-bold text-amber-400">0</span>
+          </div>
+          <div class="bg-slate-900/60 p-3 rounded-lg border border-slate-800">
+            <span class="text-[11px] text-slate-400 block font-medium">GPU Inference Instance</span>
+            <span class="text-lg font-mono font-bold text-cyan-300">AWS g5.2xlarge</span>
+          </div>
+          <div class="bg-slate-900/60 p-3 rounded-lg border border-slate-800">
+            <span class="text-[11px] text-slate-400 block font-medium">CV Model Version</span>
+            <span class="text-lg font-mono font-bold text-slate-300">RoadDefect-v1.0</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Live Stepper (Section 33) & Terminal Logs -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        
+        <!-- Checklist Stepper -->
+        <div class="glass-panel p-5 space-y-4">
+          <h2 class="text-xs font-bold uppercase tracking-wider text-slate-400">Lifecycle Verification (Sec. 6 & 33)</h2>
+          <div class="space-y-3 font-mono">
+            <div id="step-upload" class="flex items-center gap-2 text-xs text-slate-500 font-medium">
+              <span class="step-icon">○</span> Video Uploaded & Checksum Verified
+            </div>
+            <div id="step-queue" class="flex items-center gap-2 text-xs text-slate-500 font-medium">
+              <span class="step-icon">○</span> SQS Async Worker Dispatched
+            </div>
+            <div id="step-frames" class="flex items-center gap-2 text-xs text-slate-500 font-medium">
+              <span class="step-icon">○</span> 30 FPS Frame Extraction Completed
+            </div>
+            <div id="step-inference" class="flex items-center gap-2 text-xs text-slate-500 font-medium">
+              <span class="step-icon">○</span> AI Perception Inference Executing
+            </div>
+            <div id="step-geo" class="flex items-center gap-2 text-xs text-slate-500 font-medium">
+              <span class="step-icon">○</span> Road Segment Geo-referencing
+            </div>
+            <div id="step-aggregation" class="flex items-center gap-2 text-xs text-slate-500 font-medium">
+              <span class="step-icon">○</span> Condition & Operational Risk Scoring
+            </div>
+            <div id="step-complete" class="flex items-center gap-2 text-xs text-slate-500 font-medium">
+              <span class="step-icon">○</span> JSON Contract Written & Stored
+            </div>
+          </div>
+        </div>
+
+        <!-- Terminal Logs Feed -->
+        <div class="md:col-span-2 glass-panel p-5 flex flex-col h-72">
+          <div class="flex items-center justify-between pb-2 border-b border-slate-800 mb-2">
+            <span class="text-xs font-mono text-cyan-400 font-bold">Inference Telemetry Feed (stdout)</span>
+            <span class="text-[10px] text-slate-500 font-mono">FastAPI Background Worker</span>
+          </div>
+          <div id="live-terminal-logs" class="flex-1 overflow-y-auto space-y-1.5 p-2 bg-slate-950/80 rounded-lg border border-slate-900 font-mono text-xs">
+            <div class="text-slate-500">[System] Pipeline daemon active. Waiting for worker heartbeat...</div>
+          </div>
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!-- ================= SCREEN 4: ROAD INTELLIGENCE GIS MAP (Section 15, 16, 17, 39) ================= -->
+    <section id="screen-map" class="screen-view hidden space-y-6">
+      
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 class="text-2xl font-black text-white">Geospatial Road Intelligence Map</h1>
+          <p class="text-sm text-slate-400">Road segment layer with physical condition ratings and geolocated defect point markers.</p>
+        </div>
+        
+        <!-- Legend Strip (Section 16) -->
+        <div class="flex items-center gap-3 bg-slate-900/90 px-4 py-2 rounded-xl border border-slate-800 text-xs">
+          <span class="text-slate-400 font-semibold">Condition Status:</span>
+          <div class="flex items-center gap-1.5">
+            <span class="w-3 h-3 rounded-full bg-emerald-500 inline-block"></span>
+            <span class="text-emerald-400 font-medium">Good (80-100)</span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <span class="w-3 h-3 rounded-full bg-amber-500 inline-block"></span>
+            <span class="text-amber-400 font-medium">Monitor (60-79)</span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <span class="w-3 h-3 rounded-full bg-orange-500 inline-block"></span>
+            <span class="text-orange-400 font-medium">High Risk (40-59)</span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <span class="w-3 h-3 rounded-full bg-red-500 inline-block"></span>
+            <span class="text-red-400 font-bold">Critical (<40)</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 relative">
+        
+        <!-- Interactive Leaflet Map Container -->
+        <div class="lg:col-span-3 glass-panel p-2 overflow-hidden shadow-2xl relative">
+          <div id="gis-map-container"></div>
+        </div>
+
+        <!-- Section 17: Road Segment Click Interaction Card -->
+        <div id="segment-flyout" class="lg:col-span-1 glass-panel-glow p-5 flex flex-col justify-between space-y-4">
+          
+          <div>
+            <div class="flex items-center justify-between border-b border-slate-800 pb-2 mb-3">
+              <span id="flyout-segment-id" class="text-lg font-black text-cyan-400 font-mono">RD-014</span>
+              <span id="flyout-priority-badge" class="px-2 py-0.5 rounded text-xs font-bold bg-red-500/20 text-red-400 border border-red-500/40">
+                P1 Priority
+              </span>
+            </div>
+            
+            <p id="flyout-segment-name" class="text-xs text-slate-300 font-semibold leading-relaxed mb-4">
+              NH-48 Km 9.0 - 10.0 (Wakad Fast Corridor RD-014)
+            </p>
+
+            <!-- Condition vs Risk Score Comparison (Section 17 & 23) -->
+            <div class="grid grid-cols-2 gap-2 mb-4">
+              <div class="bg-slate-900/80 p-2.5 rounded-lg border border-slate-800 text-center">
+                <span class="text-[10px] text-slate-400 font-medium block">Condition Score</span>
+                <span id="flyout-cond-score" class="text-lg font-mono font-black text-red-400">48/100</span>
+              </div>
+              <div class="bg-slate-900/80 p-2.5 rounded-lg border border-slate-800 text-center">
+                <span class="text-[10px] text-slate-400 font-medium block">Risk Score</span>
+                <span id="flyout-risk-score" class="text-lg font-mono font-black text-orange-400">83/100</span>
+              </div>
+            </div>
+
+            <!-- Defect Count Breakdown (Section 17) -->
+            <div class="space-y-2 text-xs">
+              <div class="flex items-center justify-between text-slate-300 font-bold border-b border-slate-800/80 pb-1">
+                <span>Total Defects:</span>
+                <span id="flyout-total-defects" class="text-white font-mono">17</span>
+              </div>
+              <div class="flex items-center justify-between text-slate-400">
+                <span>Potholes:</span>
+                <span id="flyout-potholes" class="font-mono text-red-400 font-semibold">8</span>
+              </div>
+              <div class="flex items-center justify-between text-slate-400">
+                <span>Cracks:</span>
+                <span id="flyout-cracks" class="font-mono text-orange-400 font-semibold">6</span>
+              </div>
+              <div class="flex items-center justify-between text-slate-400">
+                <span>Marking Damage:</span>
+                <span id="flyout-markings" class="font-mono text-amber-400 font-semibold">3</span>
+              </div>
+            </div>
+
+            <!-- Severity Distribution (Section 17) -->
+            <div class="mt-4 pt-3 border-t border-slate-800 text-xs space-y-1">
+              <div class="flex justify-between text-[11px] text-slate-400 font-mono">
+                <span>Critical: <b id="flyout-critical" class="text-red-400">2</b></span>
+                <span>High: <b id="flyout-high" class="text-orange-400">5</b></span>
+                <span>Medium: <b id="flyout-medium" class="text-amber-400">7</b></span>
+                <span>Low: <b id="flyout-low" class="text-emerald-400">3</b></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 17 View Evidence CTA Button -->
+          <button id="flyout-view-evidence-btn" class="w-full py-2.5 rounded-lg bg-sky-600 hover:bg-sky-500 font-bold text-xs text-white shadow-lg shadow-sky-600/30 transition flex items-center justify-center gap-2">
+            <span>🔍</span> View Evidence & AI Detections
+          </button>
+
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!-- ================= SCREEN 5: DEFECT EVIDENCE VIEWER & SYNCHRONIZED VIDEO (Section 18, 19, 26, 39) ================= -->
+    <section id="screen-evidence" class="screen-view hidden space-y-6">
+      
+      <!-- Top Action Bar -->
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="text-2xl font-black text-white">AI Defect Evidence & Synchronized Video</h1>
+            <span class="text-xs px-2 py-0.5 rounded font-mono font-bold bg-cyan-950 text-cyan-400 border border-cyan-800">
+              Module 8 & 9
+            </span>
+          </div>
+          <p class="text-sm text-slate-400 mt-0.5">Clicking any defect seeks video automatically to exact timestamp with side-by-side annotation verification.</p>
+        </div>
+
+        <button data-download-report="DEMO-001" class="px-5 py-2.5 rounded-lg bg-gradient-to-r from-cyan-600 to-sky-600 hover:from-cyan-500 hover:to-sky-500 text-slate-950 font-black text-xs shadow-lg shadow-cyan-500/25 transition flex items-center gap-2">
+          <span>📄</span> Generate Inspection Report (PDF)
+        </button>
+      </div>
+
+      <!-- Main Dual Stage: Video Player (Top) & Evidence Viewer (Bottom) -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- Left Column: Synchronized Video Player & Defect Timeline (Section 19) -->
+        <div class="lg:col-span-7 glass-panel p-5 space-y-4">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse"></span>
+              <h2 class="text-xs font-bold uppercase tracking-wider text-slate-300">Synchronized Dashcam Video Player</h2>
+            </div>
+            <span class="text-[10px] font-mono text-cyan-400 font-semibold">HTML5 VIDEO API // AUTO-SEEK</span>
+          </div>
+
+          <!-- Video Player Element -->
+          <div class="relative bg-black rounded-xl overflow-hidden border border-slate-800 shadow-xl aspect-video flex items-center justify-center">
+            <video id="inspection-video-player" controls class="w-full h-full object-contain" ></video>
+          </div>
+
+          <!-- Interactive Defect Timeline Chips (Section 19) -->
+          <div>
+            <div class="flex items-center justify-between mb-1.5">
+              <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">Interactive Defect Timeline (Click to jump video):</span>
+              <span class="text-[10px] font-mono text-slate-500">24 anomalies mapped</span>
+            </div>
+            <div id="video-timeline-chips" class="timeline-strip border border-slate-800 rounded-lg bg-slate-900/60 p-2">
+              <!-- Dynamically populated timeline chips -->
+            </div>
+          </div>
+
+          <!-- Defect Navigation Table -->
+          <div class="space-y-2 pt-2 border-t border-slate-800">
+            <span class="text-xs font-bold text-slate-300 uppercase tracking-wide block">Corridor Detections List:</span>
+            <div class="max-h-48 overflow-y-auto border border-slate-800 rounded-lg">
+              <table class="w-full text-left border-collapse">
+                <thead class="bg-slate-900 sticky top-0 text-[10px] uppercase font-bold text-slate-400">
+                  <tr class="border-b border-slate-800">
+                    <th class="py-2 px-3">Defect ID</th>
+                    <th class="py-2 px-3">Type</th>
+                    <th class="py-2 px-3">Severity</th>
+                    <th class="py-2 px-3">Confidence</th>
+                    <th class="py-2 px-3">Time</th>
+                    <th class="py-2 px-3">Segment</th>
+                  </tr>
+                </thead>
+                <tbody id="evidence-defects-table">
+                  <!-- Populated by JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+
+
+        <!-- Right Column: Side-by-Side Defect Evidence Viewer (Section 18) -->
+        <div class="lg:col-span-5 glass-panel p-5 space-y-4 flex flex-col justify-between">
+          
+          <div>
+            <!-- Flagship Defect Header Card (Section 18) -->
+            <div class="border-b border-slate-800 pb-3 mb-4">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <span id="ev-defect-id" class="text-xl font-black text-cyan-400 font-mono">DEF-POT-00124</span>
+                  <span id="ev-mock-badge" class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-950 text-amber-300 border border-amber-800 uppercase">MOCK CV</span>
+                </div>
+                <span id="ev-severity" class="px-2 py-0.5 rounded text-xs font-bold uppercase badge-critical">CRITICAL</span>
+              </div>
+              <div class="flex items-center gap-2 mt-1">
+                <span id="ev-type" class="text-sm font-bold text-white uppercase tracking-wider">POTHOLE</span>
+                <span class="text-slate-500">•</span>
+                <span class="text-xs text-slate-400">Confidence: <b id="ev-confidence" class="text-cyan-400 font-mono">94.2%</b></span>
+              </div>
+            </div>
+
+            <!-- Traceability Metadata Grid (Section 27 AI Auditability) -->
+            <div class="grid grid-cols-2 gap-2 text-xs mb-4">
+              <div class="bg-slate-900/80 p-2.5 rounded-lg border border-slate-800">
+                <span class="text-[10px] text-slate-400 block font-medium">GPS Location</span>
+                <span id="ev-location" class="font-mono text-slate-200 font-semibold">19.06820, 73.17850</span>
+              </div>
+              <div class="bg-slate-900/80 p-2.5 rounded-lg border border-slate-800">
+                <span class="text-[10px] text-slate-400 block font-medium">Road Segment</span>
+                <span id="ev-segment" class="font-mono text-cyan-300 font-bold">RD-014</span>
+              </div>
+              <div class="bg-slate-900/80 p-2.5 rounded-lg border border-slate-800">
+                <span class="text-[10px] text-slate-400 block font-medium">Video Timestamp / Frame</span>
+                <span id="ev-timestamp" class="font-mono text-slate-200 font-semibold">00:03:24 (Frame 6,120)</span>
+              </div>
+              <div class="bg-slate-900/80 p-2.5 rounded-lg border border-slate-800">
+                <span class="text-[10px] text-slate-400 block font-medium">Perception Model</span>
+                <span id="ev-model" class="font-mono text-slate-300 font-semibold">RoadDefect-v1.0 (Mock CV)</span>
+              </div>
+              <div class="bg-slate-900/80 p-2.5 rounded-lg border border-slate-800 col-span-2">
+                <span class="text-[10px] text-slate-400 block font-medium">GPS Georeferencing Source</span>
+                <span id="ev-gps-source" class="font-mono text-cyan-300 font-semibold">interpolated from corridor geometry</span>
+              </div>
+            </div>
+
+            <!-- Side by Side Evidence Images (Section 18 & 19) -->
+            <div class="space-y-2 mb-4">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold uppercase text-slate-300">Side-by-Side Evidence Inspection</span>
+                <span class="text-[10px] text-cyan-400 font-mono font-semibold">ORIGINAL VS AI ANNOTATED</span>
+              </div>
+
+              <div class="evidence-container">
+                <!-- Original Image -->
+                <div class="evidence-box">
+                  <span class="evidence-tag bg-slate-950/80 text-slate-300 border border-slate-700">Original Camera Frame</span>
+                  <img id="img-original-evidence" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1 1'%3E%3C/svg%3E" alt="Original Frame">
+                </div>
+
+                <!-- AI Annotated Image with Bounding Box -->
+                <div class="evidence-box border-cyan-500/50">
+                  <span class="evidence-tag bg-cyan-950/90 text-cyan-300 border border-cyan-500/40">AI Annotated Detection</span>
+                  <img id="img-annotated-evidence" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1 1'%3E%3C/svg%3E" alt="Annotated Detection">
+                </div>
+              </div>
+            </div>
+
+            <!-- Priority & Operational Action (Section 24) -->
+            <div class="bg-slate-900/90 p-3 rounded-xl border border-slate-800 space-y-1.5">
+              <span class="text-[11px] font-semibold text-slate-400 block">Recommended Operational Maintenance Action:</span>
+              <div id="ev-priority-rec">
+                <span class="badge-critical px-2.5 py-1 rounded text-xs font-bold">P1 — Immediate Intervention Assessment</span>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Bottom Button -->
+          <div class="pt-3 border-t border-slate-800">
+            <button data-download-report="DEMO-001" class="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-lg font-bold text-xs transition flex items-center justify-center gap-2">
+              <span>📄</span> Export Full PDF Audit Trail for this Defect
+            </button>
+          </div>
+
+        </div>
+
+      </div>
+
+    </section>
+
+  
+    <!-- ================= SCREEN 6: USERS MANAGEMENT (Admin Only) ================= -->
+    <section id="screen-users" class="screen-view hidden space-y-6">
+      
+      <!-- Top Action Bar -->
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-800">
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-cyan-950 text-cyan-400 border border-cyan-800 uppercase">Admin Portal</span>
+            <h1 class="text-2xl font-black tracking-tight text-white">System Users & RBAC</h1>
+          </div>
+          <p class="text-sm text-slate-400 mt-0.5">Manage operator credentials and assign platform roles (viewer, inspector, admin).</p>
+        </div>
+
+        <div class="flex items-center gap-3">
+          <button id="btn-refresh-users" class="px-3.5 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-semibold flex items-center gap-1.5 transition">
+            <span>🔄</span> Refresh User List
+          </button>
+        </div>
+      </div>
+
+      <!-- Users Table Card -->
+      <div class="glass-panel p-6 rounded-2xl border border-slate-800 bg-[#0c1222]/90 shadow-xl overflow-x-auto">
+        <table class="w-full text-left text-xs text-slate-300">
+          <thead class="text-[11px] uppercase tracking-wider text-slate-400 border-b border-slate-800">
+            <tr>
+              <th class="py-3 px-4">User</th>
+              <th class="py-3 px-4">User ID</th>
+              <th class="py-3 px-4">Created At</th>
+              <th class="py-3 px-4">Current Role</th>
+              <th class="py-3 px-4">Change Role</th>
+              <th class="py-3 px-4 text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="users-table-body" class="divide-y divide-slate-800/60 font-mono">
+            <tr>
+              <td colspan="6" class="py-6 text-center text-slate-500 font-sans">Click refresh or open Users tab to load users.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- ================= TOAST NOTIFICATION ================= -->
+  <div id="toast-notification" class="hidden"></div>
+
+  <!-- ================= FOOTER ================= -->
+  <footer class="border-t border-slate-800/80 bg-[#090d16] py-3 px-6 text-center text-xs text-slate-500 font-mono">
+    Z-TRACS Road Intelligence Platform • Rodic InfraAI Innovation Challenge 2026 • Full-Stack, Cloud & Deployment Team
+  </footer>
+
+  <!-- Application Scripts -->
+  <script src="./js/config.js"></script>
+  <script src="./js/charts.js"></script>
+  <script src="./js/map.js"></script>
+  <script src="./js/video.js"></script>
+  <script src="./js/app.js"></script>
+  <script src="./js/events.js"></script>
+
+
+    <!-- ================= AUTHENTICATION / LOGIN & REGISTER OVERLAY ================= -->
+  <div id="login-overlay" class="fixed inset-0 z-[9999] bg-[#090d16]/95 backdrop-blur-xl flex items-center justify-center p-4">
+    
+    <!-- CARD 1: SIGN IN -->
+    <div id="login-card" class="glass-panel-glow max-w-md w-full p-8 space-y-6 bg-slate-900/90 border border-cyan-500/40 shadow-2xl relative rounded-2xl">
+      
+      <!-- Brand & Title -->
+      <div class="text-center space-y-2">
+        <div class="w-12 h-12 mx-auto rounded-xl bg-gradient-to-tr from-sky-600 to-cyan-400 flex items-center justify-center font-black text-2xl text-slate-950 shadow-lg shadow-cyan-500/25">
+          Z
+        </div>
+        <h2 class="text-xl font-extrabold tracking-tight text-white">Z-TRACS Road Intelligence</h2>
+        <p class="text-xs text-slate-400">Rodic InfraAI Challenge 2026 • Secure Operations Portal</p>
+      </div>
+
+      <!-- Success Notification Box -->
+      <div id="login-success-container" class="hidden text-xs text-emerald-300 bg-emerald-950/80 p-3 rounded-lg border border-emerald-500/50 flex items-center gap-2">
+        <span>✓</span>
+        <span id="login-success-text">Registration successful! Please sign in.</span>
+      </div>
+
+      <!-- Login Form -->
+      <form id="form-login"  class="space-y-4">
+        <div>
+          <label class="block text-xs font-bold uppercase text-slate-300 mb-1">Username</label>
+          <input type="text" id="login-username" required placeholder="Enter username"
+                 class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-cyan-500 font-mono">
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold uppercase text-slate-300 mb-1">Password</label>
+          <input type="password" id="login-password" required placeholder="••••••••"
+                 class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-cyan-500 font-mono">
+        </div>
+
+        <div id="login-error-container" class="hidden text-xs text-red-400 bg-red-950/60 p-2.5 rounded border border-red-500/40">
+          <span id="login-error-text">Invalid username or password</span>
+        </div>
+
+        <button type="submit" id="btn-submit-login" class="w-full py-2.5 rounded-lg bg-gradient-to-r from-sky-600 to-cyan-500 hover:from-sky-500 hover:to-cyan-400 font-extrabold text-sm text-slate-950 shadow-lg shadow-cyan-500/20 transition flex items-center justify-center gap-2">
+          <span>🔒</span> Sign In to Z-TRACS
+        </button>
+      </form>
+
+      <!-- Toggle to Register -->
+      <div class="text-center text-xs text-slate-400 pt-3 border-t border-slate-800">
+        Need an account?
+        <button type="button" id="link-to-register"  class="text-cyan-400 hover:text-cyan-300 font-bold ml-1 underline transition">
+          Create Account
+        </button>
+      </div>
+
+    </div>
+
+    <!-- CARD 2: REGISTER -->
+    <div id="register-card" class="hidden glass-panel-glow max-w-md w-full p-8 space-y-6 bg-slate-900/90 border border-cyan-500/40 shadow-2xl relative rounded-2xl">
+      
+      <!-- Brand & Title -->
+      <div class="text-center space-y-2">
+        <div class="w-12 h-12 mx-auto rounded-xl bg-gradient-to-tr from-sky-600 to-cyan-400 flex items-center justify-center font-black text-2xl text-slate-950 shadow-lg shadow-cyan-500/25">
+          Z
+        </div>
+        <h2 class="text-xl font-extrabold tracking-tight text-white">Create Z-TRACS Account</h2>
+        <p class="text-xs text-slate-400">Register as a road intelligence platform operator</p>
+      </div>
+
+      <!-- Register Form -->
+      <form id="form-register"  class="space-y-3.5">
+        <div>
+          <label class="block text-xs font-bold uppercase text-slate-300 mb-1">Username</label>
+          <input type="text" id="register-username" required placeholder="3-30 letters/numbers/underscore"
+                 class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3.5 py-2 text-sm text-white focus:outline-none focus:border-cyan-500 font-mono">
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold uppercase text-slate-300 mb-1">Full Name</label>
+          <input type="text" id="register-fullname" required placeholder="Full Name"
+                 class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3.5 py-2 text-sm text-white focus:outline-none focus:border-cyan-500 font-mono">
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold uppercase text-slate-300 mb-1">Password</label>
+          <input type="password" id="register-password" required placeholder="Min 8 chars, 1 letter, 1 number"
+                 class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3.5 py-2 text-sm text-white focus:outline-none focus:border-cyan-500 font-mono">
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold uppercase text-slate-300 mb-1">Confirm Password</label>
+          <input type="password" id="register-confirm-password" required placeholder="Re-enter password"
+                 class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3.5 py-2 text-sm text-white focus:outline-none focus:border-cyan-500 font-mono">
+        </div>
+
+        <div id="register-error-container" class="hidden text-xs text-red-400 bg-red-950/60 p-2.5 rounded border border-red-500/40">
+          <span id="register-error-text">Registration error</span>
+        </div>
+
+        <button type="submit" id="btn-submit-register" class="w-full py-2.5 rounded-lg bg-gradient-to-r from-sky-600 to-cyan-500 hover:from-sky-500 hover:to-cyan-400 font-extrabold text-sm text-slate-950 shadow-lg shadow-cyan-500/20 transition flex items-center justify-center gap-2">
+          <span>📝</span> Register Account
+        </button>
+      </form>
+
+      <!-- Toggle to Login -->
+      <div class="text-center text-xs text-slate-400 pt-3 border-t border-slate-800">
+        Already have an account?
+        <button type="button" id="link-to-login"  class="text-cyan-400 hover:text-cyan-300 font-bold ml-1 underline transition">
+          Sign In
+        </button>
+      </div>
+
+    </div>
+
+  </div>
+
+</body>
+</html>

@@ -1,0 +1,70 @@
+[
+  {
+    "detection_id": "D00001",
+    "frame_id": 1821,
+    "timestamp": 123.45,
+    "class": "pothole",
+    "confidence": 0.94,
+    "bbox": [
+      100,
+      200,
+      300,
+      400
+    ],
+    "severity": "high",
+    "latitude": 19.0682,
+    "longitude": 73.1785,
+    "evidence_uri": "/static/media/evidence/defect_00124_anno.jpg"
+  },
+  {
+    "detection_id": "D00002",
+    "frame_id": 2450,
+    "timestamp": 163.33,
+    "class": "crack",
+    "confidence": 0.91,
+    "bbox": [
+      150,
+      250,
+      450,
+      600
+    ],
+    "severity": "high",
+    "latitude": 19.0482,
+    "longitude": 73.161,
+    "evidence_uri": "/static/media/evidence/defect_00089_anno.jpg"
+  },
+  {
+    "detection_id": "D00003",
+    "frame_id": 3120,
+    "timestamp": 208.0,
+    "class": "pothole",
+    "confidence": 0.96,
+    "bbox": [
+      220,
+      310,
+      520,
+      710
+    ],
+    "severity": "critical",
+    "latitude": 19.071,
+    "longitude": 73.1808,
+    "evidence_uri": "/static/media/evidence/defect_00124_anno.jpg"
+  },
+  {
+    "detection_id": "D00004",
+    "frame_id": 980,
+    "timestamp": 65.33,
+    "class": "marking",
+    "confidence": 0.88,
+    "bbox": [
+      80,
+      120,
+      250,
+      420
+    ],
+    "severity": "medium",
+    "latitude": 19.011,
+    "longitude": 73.1285,
+    "evidence_uri": "/static/media/evidence/defect_00042_anno.jpg"
+  }
+]

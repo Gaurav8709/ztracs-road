@@ -1,0 +1,99 @@
+{
+  "schema_version": "1.0",
+  "inspection_id": "DEMO-001",
+  "model": {
+    "model_name": "ZTRACS-RoadDefect",
+    "model_version": "v1.0.0",
+    "processing_version": "cv-pipeline-v1.0.0"
+  },
+  "video": {
+    "type": "vehicle_camera",
+    "filename": "road_inspection_demo.mp4",
+    "duration_seconds": 132.5,
+    "fps": 30,
+    "width": 1920,
+    "height": 1080,
+    "codec": "H.264",
+    "total_frames": 3975
+  },
+  "detections": [
+    {
+      "detection_id": "DEF-POT-990001",
+      "track_id": "TRK-00017",
+      "frame": {
+        "frame_number": 1821,
+        "timestamp_seconds": 60.7
+      },
+      "classification": {
+        "class_name": "pothole",
+        "confidence": 0.94,
+        "severity": "critical"
+      },
+      "geometry": {
+        "bbox": {
+          "x1": 420,
+          "y1": 510,
+          "x2": 690,
+          "y2": 720
+        }
+      },
+      "location": {
+        "latitude": 18.9854,
+        "longitude": 73.1123,
+        "accuracy_meters": 3.5,
+        "quality": "good"
+      },
+      "road": {
+        "road_id": "RD-NH48",
+        "segment_id": "RD-001"
+      },
+      "measurement": {
+        "estimated_length_m": 1.24,
+        "estimated_width_m": 0.62,
+        "estimated_area_m2": 0.77,
+        "method": "camera_calibration_homography",
+        "confidence": 0.78
+      },
+      "evidence": {
+        "original_frame_s3_key": "inspections/DEMO-001/evidence/DEF-POT-990001_original.jpg",
+        "annotated_frame_s3_key": "inspections/DEMO-001/evidence/DEF-POT-990001_annotated.jpg",
+        "crop_s3_key": "inspections/DEMO-001/evidence/DEF-POT-990001_crop.jpg"
+      }
+    },
+    {
+      "detection_id": "DEF-CRK-990002",
+      "track_id": "TRK-00023",
+      "frame": {
+        "frame_number": 2310,
+        "timestamp_seconds": 77.0
+      },
+      "classification": {
+        "class_name": "longitudinal_crack",
+        "confidence": 0.89,
+        "severity": "medium"
+      },
+      "geometry": {
+        "bbox": {
+          "x1": 760,
+          "y1": 540,
+          "x2": 1260,
+          "y2": 760
+        }
+      },
+      "location": {
+        "latitude": 18.9860,
+        "longitude": 73.1130,
+        "accuracy_meters": 4.1,
+        "quality": "good"
+      },
+      "road": {
+        "road_id": "RD-NH48",
+        "segment_id": "RD-001"
+      },
+      "evidence": {
+        "original_frame_s3_key": "inspections/DEMO-001/evidence/DEF-CRK-990002_original.jpg",
+        "annotated_frame_s3_key": "inspections/DEMO-001/evidence/DEF-CRK-990002_annotated.jpg"
+      }
+    }
+  ]
+}

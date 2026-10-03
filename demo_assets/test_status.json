@@ -1,0 +1,9 @@
+{
+  "inspection_id": "DEMO-001",
+  "status": "processing",
+  "stage": "ai_inference",
+  "progress": 72,
+  "frames_processed": 2862,
+  "total_frames": 3975,
+  "detections_found": 128
+}

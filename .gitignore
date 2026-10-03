@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+venv/
+.venv/
+.env
+.env.*
+!.env.example
+!.env.aws.example
+
+# Node/JS
+node_modules/
+
+# Local runtime data
+*.db
+*.sqlite3
+static/reports/
+static/media/video/
+static/media/evidence/
+.DS_Store
+
+# IDE/editor
+.vscode/
+.idea/
+
+# Logs
+*.log
+
+# Screenshots
+static/screenshots/
+screenshots/
+
+scratch/
+data/
