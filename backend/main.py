@@ -125,18 +125,30 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
-        response.headers["Content-Security-Policy"] = (
-            "default-src 'self'; "
-            "script-src 'self'; "
-            "style-src 'self' 'unsafe-inline'; "
-            "font-src 'self' data:; "
-            "img-src 'self' https://*.openstreetmap.org https://*.tile.openstreetmap.org data: blob:; "
-            "media-src 'self' blob:; "
-            "connect-src 'self'; "
-            "frame-ancestors 'none'; "
-            "object-src 'none'; "
-            "base-uri 'self'"
-        )
+        
+        path = request.url.path
+        if path in ["/docs", "/redoc", "/openapi.json"]:
+            response.headers["Content-Security-Policy"] = (
+                "default-src 'self'; "
+                "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+                "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+                "font-src 'self' data: https://cdn.jsdelivr.net; "
+                "img-src 'self' https://cdn.jsdelivr.net data: blob:; "
+                "connect-src 'self'; "
+            )
+        else:
+            response.headers["Content-Security-Policy"] = (
+                "default-src 'self'; "
+                "script-src 'self'; "
+                "style-src 'self' 'unsafe-inline'; "
+                "font-src 'self' data:; "
+                "img-src 'self' https://*.openstreetmap.org https://*.tile.openstreetmap.org data: blob:; "
+                "media-src 'self' blob:; "
+                "connect-src 'self'; "
+                "frame-ancestors 'none'; "
+                "object-src 'none'; "
+                "base-uri 'self'"
+            )
         return response
 
 app.add_middleware(SecurityHeadersMiddleware)
