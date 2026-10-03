@@ -127,14 +127,14 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
         
         path = request.url.path
-        if path in ["/docs", "/redoc", "/openapi.json"]:
+        if path.startswith("/docs") or path.startswith("/redoc") or path.startswith("/openapi"):
             response.headers["Content-Security-Policy"] = (
                 "default-src 'self'; "
                 "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
                 "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
                 "font-src 'self' data: https://cdn.jsdelivr.net; "
                 "img-src 'self' https://cdn.jsdelivr.net data: blob:; "
-                "connect-src 'self'; "
+                "connect-src 'self'"
             )
         else:
             response.headers["Content-Security-Policy"] = (
