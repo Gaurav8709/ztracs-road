@@ -1,10 +1,20 @@
 /**
  * Z-TRACS Road Intelligence - Frontend Configuration
  * window.API_BASE defines the base URL for backend API requests.
- * Empty string ("") means same origin (unified mode on port 8000).
- * In split mode (frontend served on port 3000), set to "http://127.0.0.1:8000".
  */
-window.API_BASE = window.API_BASE || "";
+if (!window.API_BASE) {
+  if (typeof window !== "undefined" && window.location && window.location.hostname) {
+    if (window.location.hostname.includes("vercel.app")) {
+      window.API_BASE = "http://3.109.28.196:8000";
+    } else if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
+      window.API_BASE = "http://127.0.0.1:8000";
+    } else {
+      window.API_BASE = "";
+    }
+  } else {
+    window.API_BASE = "";
+  }
+}
 
 function resolveApiUrl(path) {
   if (!path) return "";
