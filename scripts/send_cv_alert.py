@@ -6,10 +6,11 @@ Ultra-clean & lightweight alert sender for the Computer Vision (CV) AI team.
 - ZERO external dependencies (uses standard Python urllib.request).
 - NO username, NO password, NO auth token required.
 - NO 404 errors (automatically uses or registers target inspection_id).
+- Supports sending defect/asset EVIDENCE IMAGES (Base64 string or URL).
 
 Usage:
   python scripts/send_cv_alert.py --tag pothole --type damage
-  python scripts/send_cv_alert.py --tag "traffic light" --type asset --lat 18.9850 --long 73.1100
+  python scripts/send_cv_alert.py --tag "traffic light" --type asset --lat 18.9850 --long 73.1100 --image-base64 "data:image/jpeg;base64,..."
 """
 
 import argparse
@@ -26,6 +27,8 @@ def send_alert(
     rtsp: bool = False,
     lat: float = None,
     long: float = None,
+    image_base64: str = None,
+    image_url: str = None,
     inspection_id: str = "DEMO-001"
 ):
     url = f"{api_base.rstrip('/')}/api/cv/alert"
@@ -39,6 +42,11 @@ def send_alert(
         "long": long
     }
     
+    if image_base64:
+        payload["image_base64"] = image_base64
+    elif image_url:
+        payload["image_url"] = image_url
+
     data = json.dumps(payload).encode("utf-8")
     req = urllib.request.Request(
         url,
@@ -70,6 +78,8 @@ if __name__ == "__main__":
     parser.add_argument("--rtsp", action="store_true", default=False, help="Source is live RTSP stream")
     parser.add_argument("--lat", type=float, default=None, help="Latitude (optional)")
     parser.add_argument("--long", type=float, default=None, help="Longitude (optional)")
+    parser.add_argument("--image-base64", default=None, help="Base64 encoded JPEG image frame (optional)")
+    parser.add_argument("--image-url", default=None, help="Evidence image URL (optional)")
     parser.add_argument("--inspection-id", default="DEMO-001", help="Target inspection survey ID")
     
     args = parser.parse_args()
@@ -81,5 +91,7 @@ if __name__ == "__main__":
         rtsp=args.rtsp,
         lat=args.lat,
         long=args.long,
+        image_base64=args.image_base64,
+        image_url=args.image_url,
         inspection_id=getattr(args, "inspection_id", "DEMO-001")
     )

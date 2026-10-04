@@ -1009,16 +1009,29 @@ async def ingest_simple_cv_alert(payload: Dict[str, Any]):
     det_id = f"DEF-CV-{uuid.uuid4().hex[:6].upper()}"
     defect_class = normalize_cv_class(tag)
 
+    # Evidence Image Handling (Base64 string, URL, or fallback)
+    raw_img = payload.get("image_base64") or payload.get("image") or payload.get("image_url") or payload.get("evidence_url")
+    evidence_url = ""
+    if raw_img and str(raw_img).strip():
+        img_str = str(raw_img).strip()
+        if img_str.startswith("data:image/") or img_str.startswith("http://") or img_str.startswith("https://") or img_str.startswith("/"):
+            evidence_url = img_str
+        else:
+            evidence_url = f"data:image/jpeg;base64,{img_str}"
+    else:
+        # Fallback evidence image if CV team omits image field
+        evidence_url = "/static/media/evidence/demo_pothole_001.jpg" if defect_class == "pothole" else "/static/media/evidence/demo_crack_001.jpg"
+
     cursor.execute(
         """
         INSERT INTO detections (
             id, detection_id, inspection_id, frame_id, timestamp, defect_type,
             confidence, severity, bbox_json, latitude, longitude, geom, road_segment_id,
             evidence_orig_url, evidence_anno_url, model_version, is_mock, gps_source
-        ) VALUES (%s, %s, %s, 1, 0.0, %s, %s, %s, '[100, 100, 300, 300]', %s, %s, ST_SetSRID(ST_MakePoint(%s, %s), 4326), 'RD-001', '', '', 'RoadDefect-v1.0', 0, 'CV AI Alert')
+        ) VALUES (%s, %s, %s, 1, 0.0, %s, %s, %s, '[100, 100, 300, 300]', %s, %s, ST_SetSRID(ST_MakePoint(%s, %s), 4326), 'RD-001', %s, %s, 'RoadDefect-v1.0', 0, 'CV AI Alert')
         ON CONFLICT (id) DO NOTHING
         """,
-        (det_id, det_id, target_id, defect_class, conf, sev, lat, lng, lng, lat)
+        (det_id, det_id, target_id, defect_class, conf, sev, lat, lng, lng, lat, evidence_url, evidence_url)
     )
 
     alert_id = f"ALT-{det_id}"
@@ -1028,10 +1041,10 @@ async def ingest_simple_cv_alert(payload: Dict[str, Any]):
         INSERT INTO alerts (
             id, inspection_id, segment_id, defect_id, defect_type, severity,
             message, timestamp, latitude, longitude, evidence_url, is_read
-        ) VALUES (%s, %s, 'RD-001', %s, %s, %s, %s, NOW(), %s, %s, '', 0)
+        ) VALUES (%s, %s, 'RD-001', %s, %s, %s, %s, NOW(), %s, %s, %s, 0)
         ON CONFLICT (id) DO NOTHING
         """,
-        (alert_id, target_id, det_id, defect_class, sev, msg, lat, lng)
+        (alert_id, target_id, det_id, defect_class, sev, msg, lat, lng, evidence_url)
     )
 
     cursor.execute("UPDATE inspections SET defect_count = defect_count + 1 WHERE id = %s", (target_id,))
