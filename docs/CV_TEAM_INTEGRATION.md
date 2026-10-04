@@ -23,8 +23,7 @@ This document defines the official API integration and JSON payload schemas (Sch
 
 | Endpoint | Method | Description |
 | :--- | :--- | :--- |
-| `POST /api/auth/login` | `POST` | Authenticate and get JWT Bearer Token |
-| `GET /api/inspections/{id}/pipeline-payload` | `GET` | Fetch video source URL, model version, and survey params |
+| `POST /api/cv/alert` | `POST` | **Simplified Alert**: Token-free, auto-creates inspection, accepts `{video, rtsp, type, tag, lat, long}` |
 | `POST /api/cv/ai-results` | `POST` | Ingest full `ai_results.json` (Schema 1.0) defect & segment metrics |
 | `POST /api/cv/status-update` | `POST` | Ingest real-time `processing_status.json` progress updates |
 | `POST /api/cv/status-failed` | `POST` | Ingest pipeline failure report `processing_failed.json` |

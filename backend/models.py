@@ -351,3 +351,15 @@ class CVFailedPayload(BaseModel):
     error_message: Optional[str] = "Processing failed"
     retryable: Optional[bool] = True
 
+class SimpleCVAlertPayload(BaseModel):
+    inspection_id: Optional[str] = "DEMO-001"
+    video: Optional[bool] = True
+    rtsp: Optional[bool] = False
+    type: str = "damage"  # "damage" or "asset"
+    tag: str = "pothole"   # damage: pothole, cracks, water filled pothole | asset: traffic light, guardrails
+    lat: Optional[float] = None
+    long: Optional[float] = None
+    confidence: Optional[float] = 0.90
+    severity: Optional[str] = "high"
+
+

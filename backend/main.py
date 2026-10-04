@@ -949,20 +949,118 @@ def normalize_cv_class(raw_class: str) -> str:
     return "crack"
 
 
-@app.post("/api/inspections/{id}/ai-results")
-@app.post("/api/cv/ai-results")
-async def ingest_cv_ai_results(payload: Dict[str, Any], id: Optional[str] = None, user: Dict[str, Any] = Depends(require_role(["admin", "inspector"]))):
-    inspection_id = id or payload.get("inspection_id")
-    if not inspection_id:
-        raise HTTPException(status_code=400, detail="inspection_id is required in URL or JSON payload.")
-
-    conn = get_connection()
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM inspections WHERE id = %s", (inspection_id,))
+def _ensure_inspection_exists(conn, cursor, inspection_id: Optional[str] = None):
+    target_id = str(inspection_id or "DEMO-001").strip()
+    cursor.execute("SELECT id, model_version, total_frames, duration_seconds FROM inspections WHERE id = %s", (target_id,))
     insp = cursor.fetchone()
     if not insp:
-        conn.close()
-        raise HTTPException(status_code=404, detail=f"Inspection '{inspection_id}' not found.")
+        now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        cursor.execute(
+            """
+            INSERT INTO inspections (
+                id, survey_name, road_id, road_name, model_version, status,
+                defect_count, total_frames, duration_seconds, created_at, completed_at
+            ) VALUES (%s, %s, 'RD-001', 'NH-48 Expressway', 'ZTRACS-RoadDefect v1.0.0', 'PROCESSING', 0, 1000, 60.0, %s, %s)
+            ON CONFLICT (id) DO NOTHING
+            """,
+            (target_id, f"CV Survey {target_id}", now_str, now_str)
+        )
+        conn.commit()
+        cursor.execute("SELECT id, model_version, total_frames, duration_seconds FROM inspections WHERE id = %s", (target_id,))
+        insp = cursor.fetchone()
+    return target_id, insp
+
+
+@app.post("/api/cv/alert")
+async def ingest_simple_cv_alert(payload: Dict[str, Any]):
+    """
+    Ultra-simplified CV Alert ingestion endpoint for CV AI Team.
+    No username/password or auth token required.
+    Payload structure:
+    {
+      "inspection_id": "DEMO-001", // optional, defaults to DEMO-001
+      "video": true,
+      "rtsp": false,
+      "type": "damage",            // damage or asset
+      "tag": "pothole",            // pothole, cracks, water filled pothole, traffic light, guardrails, etc.
+      "lat": 18.985,
+      "long": 73.110
+    }
+    """
+    raw_insp_id = payload.get("inspection_id") or "DEMO-001"
+    conn = get_connection()
+    cursor = conn.cursor()
+    target_id, _ = _ensure_inspection_exists(conn, cursor, str(raw_insp_id))
+
+    is_video = bool(payload.get("video", True))
+    is_rtsp = bool(payload.get("rtsp", False))
+    alert_type = str(payload.get("type", "damage")).lower().strip()
+    tag = str(payload.get("tag", "pothole")).lower().strip()
+
+    lat_val = payload.get("lat") if "lat" in payload else payload.get("latitude")
+    lng_val = payload.get("long") if "long" in payload else (payload.get("longitude") or payload.get("lng"))
+
+    lat = float(lat_val) if (lat_val is not None and str(lat_val).strip() != "" and str(lat_val).lower() != "none") else 18.9850
+    lng = float(lng_val) if (lng_val is not None and str(lng_val).strip() != "" and str(lng_val).lower() != "none") else 73.1100
+
+    conf = float(payload.get("confidence", 0.90))
+    sev = str(payload.get("severity", "high" if alert_type == "damage" else "low")).lower().strip()
+
+    det_id = f"DEF-CV-{uuid.uuid4().hex[:6].upper()}"
+    defect_class = normalize_cv_class(tag)
+
+    cursor.execute(
+        """
+        INSERT INTO detections (
+            id, detection_id, inspection_id, frame_id, timestamp, defect_type,
+            confidence, severity, bbox_json, latitude, longitude, geom, road_segment_id,
+            evidence_orig_url, evidence_anno_url, model_version, is_mock, gps_source
+        ) VALUES (%s, %s, %s, 1, 0.0, %s, %s, %s, '[100, 100, 300, 300]', %s, %s, ST_SetSRID(ST_MakePoint(%s, %s), 4326), 'RD-001', '', '', 'RoadDefect-v1.0', 0, 'CV AI Alert')
+        ON CONFLICT (id) DO NOTHING
+        """,
+        (det_id, det_id, target_id, defect_class, conf, sev, lat, lng, lng, lat)
+    )
+
+    alert_id = f"ALT-{det_id}"
+    msg = f"CV Alert [{alert_type.upper()}]: {tag.upper()} ({'RTSP' if is_rtsp else 'Video'})"
+    cursor.execute(
+        """
+        INSERT INTO alerts (
+            id, inspection_id, segment_id, defect_id, defect_type, severity,
+            message, timestamp, latitude, longitude, evidence_url, is_read
+        ) VALUES (%s, %s, 'RD-001', %s, %s, %s, %s, NOW(), %s, %s, '', 0)
+        ON CONFLICT (id) DO NOTHING
+        """,
+        (alert_id, target_id, det_id, defect_class, sev, msg, lat, lng)
+    )
+
+    cursor.execute("UPDATE inspections SET defect_count = defect_count + 1 WHERE id = %s", (target_id,))
+    conn.commit()
+    conn.close()
+
+    return {
+        "status": "success",
+        "alert_id": alert_id,
+        "inspection_id": target_id,
+        "received": {
+            "inspection_id": target_id,
+            "video": is_video,
+            "rtsp": is_rtsp,
+            "type": alert_type,
+            "tag": tag,
+            "lat": lat,
+            "long": lng
+        }
+    }
+
+
+@app.post("/api/inspections/{id}/ai-results")
+@app.post("/api/cv/ai-results")
+async def ingest_cv_ai_results(payload: Dict[str, Any], id: Optional[str] = None):
+    inspection_id = id or payload.get("inspection_id") or "DEMO-001"
+    conn = get_connection()
+    cursor = conn.cursor()
+    target_id, insp = _ensure_inspection_exists(conn, cursor, str(inspection_id))
 
     model_info = payload.get("model") or {}
     model_version = model_info.get("model_version") or insp["model_version"]
@@ -1143,10 +1241,10 @@ async def ingest_cv_ai_results(payload: Dict[str, Any], id: Optional[str] = None
     conn.commit()
     conn.close()
 
-    record_audit_log(user["username"], user["role"], "ingest_cv_results", target_id=inspection_id, details=f"Ingested {len(inserted_ids)} defects via CV Schema 1.0")
+    record_audit_log("cv_system", "system", "ingest_cv_results", target_id=target_id, details=f"Ingested {len(inserted_ids)} defects via CV Schema 1.0")
     return {
         "status": "success",
-        "inspection_id": inspection_id,
+        "inspection_id": target_id,
         "detections_ingested": len(inserted_ids),
         "affected_segments": sorted(list(affected_segments)),
         "message": "CV Schema 1.0 AI results ingested successfully."
@@ -1154,13 +1252,10 @@ async def ingest_cv_ai_results(payload: Dict[str, Any], id: Optional[str] = None
 
 
 @app.post("/api/cv/status-update")
-async def update_cv_status(payload: CVStatusUpdatePayload, user: Dict[str, Any] = Depends(require_role(["admin", "inspector"]))):
+async def update_cv_status(payload: CVStatusUpdatePayload):
     conn = get_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT id FROM inspections WHERE id = %s", (payload.inspection_id,))
-    if not cursor.fetchone():
-        conn.close()
-        raise HTTPException(status_code=404, detail=f"Inspection '{payload.inspection_id}' not found.")
+    target_id, _ = _ensure_inspection_exists(conn, cursor, payload.inspection_id)
 
     cursor.execute(
         """
@@ -1176,18 +1271,19 @@ async def update_cv_status(payload: CVStatusUpdatePayload, user: Dict[str, Any] 
             payload.frames_processed,
             payload.total_frames,
             payload.detections_found,
-            payload.inspection_id,
+            target_id,
         )
     )
     conn.commit()
     conn.close()
-    return {"status": "success", "inspection_id": payload.inspection_id}
+    return {"status": "success", "inspection_id": target_id}
 
 
 @app.post("/api/cv/status-failed")
-async def report_cv_failed(payload: CVFailedPayload, user: Dict[str, Any] = Depends(require_role(["admin", "inspector"]))):
+async def report_cv_failed(payload: CVFailedPayload):
     conn = get_connection()
     cursor = conn.cursor()
+    target_id, _ = _ensure_inspection_exists(conn, cursor, payload.inspection_id)
     now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     cursor.execute(
         """
@@ -1196,11 +1292,11 @@ async def report_cv_failed(payload: CVFailedPayload, user: Dict[str, Any] = Depe
             error_message = %s, completed_at = %s
         WHERE id = %s
         """,
-        (f"[{payload.error_code}] {payload.error_message}", now_str, payload.inspection_id)
+        (f"[{payload.error_code}] {payload.error_message}", now_str, target_id)
     )
     conn.commit()
     conn.close()
-    return {"status": "failed_recorded", "inspection_id": payload.inspection_id}
+    return {"status": "failed_recorded", "inspection_id": target_id}
 
 
 
