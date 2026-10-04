@@ -383,10 +383,75 @@ async function loadModelsRegistry() {
   }
 }
 
+function populateSurveySelectors(inspections) {
+  const selects = document.querySelectorAll('.survey-switcher-select');
+  if (!selects.length) return;
+
+  const currentVal = state.currentInspectionId || 'DEMO-001';
+  let optionsHtml = '';
+
+  if (Array.isArray(inspections) && inspections.length > 0) {
+    optionsHtml = inspections.map(insp => {
+      const road = insp.road_name || 'Corridor';
+      const name = insp.name || insp.id;
+      return `<option value="${escapeHtml(insp.id)}">${escapeHtml(insp.id)} - ${escapeHtml(name)} (${escapeHtml(insp.status)})</option>`;
+    }).join('');
+  } else {
+    optionsHtml = `<option value="DEMO-001">DEMO-001 (NH-48 Expressway)</option>`;
+  }
+
+  selects.forEach(sel => {
+    sel.innerHTML = optionsHtml;
+    sel.value = currentVal;
+  });
+}
+window.populateSurveySelectors = populateSurveySelectors;
+
+function switchActiveSurvey(surveyId) {
+  if (!surveyId) return;
+  state.currentInspectionId = surveyId;
+
+  // Sync all dropdowns
+  document.querySelectorAll('.survey-switcher-select').forEach(sel => {
+    sel.value = surveyId;
+  });
+
+  // Sync active badge
+  const badge = document.getElementById("command-active-survey-badge");
+  if (badge) badge.innerText = `Active: ${surveyId}`;
+
+  // Sync download buttons data-download-report attribute
+  document.querySelectorAll('[data-download-report]').forEach(btn => {
+    btn.setAttribute('data-download-report', surveyId);
+  });
+
+  // Re-fetch overview KPIs & charts for selected survey ID
+  fetchOverview();
+
+  // If GIS Map screen is visible, update GIS map
+  const mapScreen = document.getElementById('screen-map');
+  if (mapScreen && !mapScreen.classList.contains('hidden')) {
+    if (window.loadMapData) {
+      window.loadMapData(surveyId);
+    }
+  }
+
+  // If Evidence screen is visible, load video & detections for this survey
+  const evScreen = document.getElementById('screen-evidence');
+  if (evScreen && !evScreen.classList.contains('hidden')) {
+    loadInspectionVideo(surveyId);
+    loadDetections(surveyId);
+  }
+
+  showToast(`Switched view to Survey: ${surveyId}`);
+}
+window.switchActiveSurvey = switchActiveSurvey;
+
 async function loadInspectionsList() {
   try {
     const res = await apiFetch('/api/inspections');
     state.inspections = await res.json();
+    populateSurveySelectors(state.inspections);
 
     const tbody = document.getElementById("inspections-table-body");
     if (!tbody) return;
@@ -1163,11 +1228,8 @@ async function loadInspectionVideo(inspectionId) {
 window.loadInspectionVideo = loadInspectionVideo;
 
 window.viewInspection = function(id) {
-  state.currentInspectionId = id;
-  loadInspectionVideo(id);
-  loadDetections(id);
-  fetchOverview();
-  navigateToScreen('screen-map');
+  switchActiveSurvey(id);
+  navigateToScreen('screen-evidence');
 };
 
 window.filterEvidenceBySegment = function(segId) {
@@ -1356,9 +1418,14 @@ document.addEventListener('click', function(e) {
   if (updateRoleBtn) {
     const userId = updateRoleBtn.getAttribute('data-user-id');
     const username = updateRoleBtn.getAttribute('data-username');
-    if (userId && window.handleRoleChange) {
-      window.handleRoleChange(userId, username);
-    }
     return;
+  }
+});
+
+document.addEventListener('change', function(e) {
+  if (e.target && e.target.classList.contains('survey-switcher-select')) {
+    if (window.switchActiveSurvey) {
+      window.switchActiveSurvey(e.target.value);
+    }
   }
 });

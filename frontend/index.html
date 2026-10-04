@@ -73,11 +73,13 @@
       <!-- Right Header Actions (Demo Mode & Role Switcher) -->
       <div class="flex items-center gap-3">
         
-        <!-- Section 38 Demo Mode Button -->
-        <button id="btn-demo-mode" class="px-3.5 py-1.5 rounded-lg bg-gradient-to-r from-amber-500/20 to-orange-500/20 hover:from-amber-500/30 hover:to-orange-500/30 text-amber-300 border border-amber-500/40 text-xs font-bold flex items-center gap-1.5 shadow-sm transition">
-          <span>⚡</span>
-          <span>Golden Demo (DEMO-001)</span>
-        </button>
+        <!-- Section 38 Demo Mode Button / Active Survey Switcher -->
+        <div class="flex items-center gap-2 bg-slate-900/90 px-3 py-1.5 rounded-lg border border-amber-500/40 shadow-sm">
+          <span class="text-amber-400 text-xs font-bold flex items-center gap-1">⚡ Survey:</span>
+          <select class="survey-switcher-select bg-slate-950 text-amber-300 font-bold text-xs py-1 px-2 rounded border border-amber-500/40 focus:outline-none focus:border-amber-400 cursor-pointer">
+            <option value="DEMO-001">DEMO-001 (NH-48 Expressway)</option>
+          </select>
+        </div>
 
         <!-- User Profile & Real Role Badge & Logout (Requirement 4) -->
         <div id="user-profile-badge" class="flex items-center gap-2 bg-slate-800/80 px-3 py-1.5 rounded-lg border border-slate-700 text-xs">
@@ -123,13 +125,19 @@
       <!-- Top Overview Header -->
       <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 class="text-2xl font-black tracking-tight text-white flex items-center gap-2">
+          <h1 class="text-2xl font-black tracking-tight text-white flex items-center gap-2 flex-wrap">
             <span>Infrastructure Command Center</span>
-            <span class="text-xs px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 font-mono font-normal">Active: NH-48 Expressway</span>
+            <span id="command-active-survey-badge" class="text-xs px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 font-mono font-normal">Active: DEMO-001</span>
           </h1>
           <p class="text-sm text-slate-400 mt-0.5">Continuous automated road surface anomaly perception and operational risk scoring.</p>
         </div>
         <div class="flex items-center gap-3">
+          <div class="flex items-center gap-2 bg-slate-900/90 px-3 py-1.5 rounded-lg border border-cyan-500/40 shadow-sm">
+            <span class="text-cyan-400 text-xs font-bold flex items-center gap-1">📍 Select Survey:</span>
+            <select class="survey-switcher-select bg-slate-950 text-cyan-300 font-bold text-xs py-1 px-2 rounded border border-cyan-500/40 focus:outline-none focus:border-cyan-400 cursor-pointer">
+              <option value="DEMO-001">DEMO-001 (NH-48 Expressway)</option>
+            </select>
+          </div>
           <button id="btn-initiate-inspection" data-nav="screen-new-inspection" class="admin-only px-4 py-2 rounded-lg bg-sky-600 hover:bg-sky-500 font-bold text-xs text-white shadow-lg shadow-sky-600/20 transition flex items-center gap-2">
             <span>+</span> Initiate Inspection
           </button>
@@ -504,8 +512,16 @@
       
       <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 class="text-2xl font-black text-white">Geospatial Road Intelligence Map</h1>
-          <p class="text-sm text-slate-400">Road segment layer with physical condition ratings and geolocated defect point markers.</p>
+          <div class="flex items-center gap-3 flex-wrap">
+            <h1 class="text-2xl font-black text-white">Geospatial Road Intelligence Map</h1>
+            <div class="flex items-center gap-2 bg-slate-900/90 px-3 py-1.5 rounded-lg border border-cyan-500/40 shadow-sm">
+              <span class="text-cyan-400 text-xs font-bold flex items-center gap-1">📍 Select Survey:</span>
+              <select class="survey-switcher-select bg-slate-950 text-cyan-300 font-bold text-xs py-1 px-2 rounded border border-cyan-500/40 focus:outline-none focus:border-cyan-400 cursor-pointer">
+                <option value="DEMO-001">DEMO-001 (NH-48 Expressway)</option>
+              </select>
+            </div>
+          </div>
+          <p class="text-sm text-slate-400 mt-0.5">Road segment layer with physical condition ratings and geolocated defect point markers.</p>
         </div>
         
         <!-- Legend Strip (Section 16) -->
@@ -613,11 +629,17 @@
       <!-- Top Action Bar -->
       <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-4">
         <div>
-          <div class="flex items-center gap-2">
-            <h1 class="text-2xl font-black text-white">AI Defect Evidence & Synchronized Video</h1>
+          <div class="flex items-center gap-3 flex-wrap">
+            <h1 class="text-2xl font-black text-white">AI Defect Evidence & Video Sync</h1>
             <span class="text-xs px-2 py-0.5 rounded font-mono font-bold bg-cyan-950 text-cyan-400 border border-cyan-800">
-              Module 8 & 9
+              Evidence & Alerts
             </span>
+            <div class="flex items-center gap-2 bg-slate-900/90 px-3 py-1.5 rounded-lg border border-cyan-500/40 shadow-sm">
+              <span class="text-cyan-400 text-xs font-bold flex items-center gap-1">📍 Select Survey:</span>
+              <select class="survey-switcher-select bg-slate-950 text-cyan-300 font-bold text-xs py-1 px-2 rounded border border-cyan-500/40 focus:outline-none focus:border-cyan-400 cursor-pointer">
+                <option value="DEMO-001">DEMO-001 (NH-48 Expressway)</option>
+              </select>
+            </div>
           </div>
           <p class="text-sm text-slate-400 mt-0.5">Clicking any defect seeks video automatically to exact timestamp with side-by-side annotation verification.</p>
         </div>
