@@ -20,7 +20,7 @@ import urllib.error
 import sys
 
 def send_alert(
-    api_base: str = "http://127.0.0.1:8000",
+    api_base: str = "http://3.109.28.196:8000",
     tag: str = "pothole",
     alert_type: str = "damage",
     video: bool = True,
@@ -71,7 +71,7 @@ def send_alert(
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Z-TRACS CV Alert Sender")
-    parser.add_argument("--api-base", default="http://127.0.0.1:8000", help="Z-TRACS API Base URL")
+    parser.add_argument("--api-base", default="http://3.109.28.196:8000", help="Z-TRACS API Base URL")
     parser.add_argument("--tag", default="pothole", help="Alert tag (e.g. pothole, cracks, traffic light)")
     parser.add_argument("--type", default="damage", choices=["damage", "asset"], help="Alert type (damage or asset)")
     parser.add_argument("--video", action="store_true", default=True, help="Source is video file")
