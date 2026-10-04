@@ -1009,12 +1009,25 @@ async def ingest_simple_cv_alert(payload: Dict[str, Any]):
     det_id = f"DEF-CV-{uuid.uuid4().hex[:6].upper()}"
     defect_class = normalize_cv_class(tag)
 
-    # Evidence Image Handling (Base64 string, URL, or fallback)
-    raw_img = payload.get("image_base64") or payload.get("image") or payload.get("image_url") or payload.get("evidence_url")
+    # Evidence Image Handling (S3 URL, S3 Key, Base64 string, or fallback)
+    raw_img = (
+        payload.get("image_url") or
+        payload.get("s3_url") or
+        payload.get("s3_key") or
+        payload.get("evidence_url") or
+        payload.get("image_base64") or
+        payload.get("image")
+    )
     evidence_url = ""
     if raw_img and str(raw_img).strip():
         img_str = str(raw_img).strip()
-        if img_str.startswith("data:image/") or img_str.startswith("http://") or img_str.startswith("https://") or img_str.startswith("/"):
+        if img_str.startswith("s3://"):
+            # Convert s3://bucket/key to https://bucket.s3.amazonaws.com/key
+            parts = img_str[5:].split("/", 1)
+            bucket = parts[0]
+            key = parts[1] if len(parts) > 1 else ""
+            evidence_url = f"https://{bucket}.s3.amazonaws.com/{key}"
+        elif img_str.startswith("data:image/") or img_str.startswith("http://") or img_str.startswith("https://") or img_str.startswith("/"):
             evidence_url = img_str
         else:
             evidence_url = f"data:image/jpeg;base64,{img_str}"
