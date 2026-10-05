@@ -1015,11 +1015,13 @@ async function handleNewInspectionSubmit(e) {
         formData.append('file', selectedVideoFile);
         
         const uploadUrl = (typeof resolveApiUrl === "function") ? resolveApiUrl(`/api/inspections/${newInsp.id}/upload`) : `/api/inspections/${newInsp.id}/upload`;
+        const token = state.token || localStorage.getItem("ztracs_token");
+        const headers = {};
+        if (token) headers["Authorization"] = `Bearer ${token}`;
+
         const uploadRes = await fetch(uploadUrl, {
           method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${state.token}`
-          },
+          headers: headers,
           body: formData
         });
         if (!uploadRes.ok) {

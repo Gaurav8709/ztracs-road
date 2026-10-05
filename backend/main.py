@@ -335,7 +335,7 @@ async def list_models(user: Dict[str, Any] = Depends(require_role(["viewer", "in
 
 
 @app.post("/api/inspections", response_model=InspectionResponse, status_code=status.HTTP_201_CREATED)
-async def create_inspection(payload: InspectionCreate, user: Dict[str, Any] = Depends(require_role(["admin", "inspector"]))):
+async def create_inspection(payload: InspectionCreate, user: Dict[str, Any] = Depends(require_role(["viewer", "inspector", "admin"]))):
     conn = get_connection()
     cursor = conn.cursor()
     cursor.execute("SELECT COUNT(*) as count FROM inspections")
@@ -419,7 +419,7 @@ async def create_inspection(payload: InspectionCreate, user: Dict[str, Any] = De
 
 
 @app.post("/api/inspections/{id}/attach-rtsp-stream")
-async def attach_rtsp_stream(id: str, payload: Dict[str, Any], user: Dict[str, Any] = Depends(require_role(["admin", "inspector"]))):
+async def attach_rtsp_stream(id: str, payload: Dict[str, Any], user: Dict[str, Any] = Depends(require_role(["viewer", "inspector", "admin"]))):
     rtsp_url = str(payload.get("rtsp_url") or "").strip()
     if not rtsp_url or not rtsp_url.startswith("rtsp://"):
         raise HTTPException(status_code=400, detail="A valid RTSP URL starting with rtsp:// is required.")
@@ -514,7 +514,7 @@ async def get_inspection(id: str, user: Dict[str, Any] = Depends(require_role(["
 
 
 @app.post("/api/inspections/{id}/upload")
-async def upload_inspection_video(id: str, file: UploadFile = File(...), user: Dict[str, Any] = Depends(require_role(["admin", "inspector"]))):
+async def upload_inspection_video(id: str, file: UploadFile = File(...), user: Dict[str, Any] = Depends(require_role(["viewer", "inspector", "admin"]))):
     conn = get_connection()
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM inspections WHERE id = %s", (id,))
@@ -524,7 +524,9 @@ async def upload_inspection_video(id: str, file: UploadFile = File(...), user: D
         raise HTTPException(status_code=404, detail="Inspection not found")
 
     content_type = (file.content_type or "").lower()
-    if not content_type.startswith("video/"):
+    file_ext = os.path.splitext(file.filename or "")[1].lower()
+    allowed_exts = [".mp4", ".mov", ".avi", ".mkv", ".webm", ".m4v"]
+    if not (content_type.startswith("video/") or content_type in ["application/octet-stream", "binary/octet-stream", ""] or file_ext in allowed_exts):
         conn.close()
         raise HTTPException(status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE, detail="Only MP4 or MOV video uploads are accepted.")
 
@@ -572,7 +574,7 @@ async def upload_inspection_video(id: str, file: UploadFile = File(...), user: D
 
 
 @app.post("/api/inspections/{id}/gps")
-async def upload_inspection_gps(id: str, file: UploadFile = File(...), user: Dict[str, Any] = Depends(require_role(["admin", "inspector"]))):
+async def upload_inspection_gps(id: str, file: UploadFile = File(...), user: Dict[str, Any] = Depends(require_role(["viewer", "inspector", "admin"]))):
     conn = get_connection()
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM inspections WHERE id = %s", (id,))
@@ -643,7 +645,7 @@ async def upload_inspection_gps(id: str, file: UploadFile = File(...), user: Dic
 
 
 @app.post("/api/inspections/{id}/start")
-async def start_inspection(id: str, background_tasks: BackgroundTasks, user: Dict[str, Any] = Depends(require_role(["admin", "inspector"]))):
+async def start_inspection(id: str, background_tasks: BackgroundTasks, user: Dict[str, Any] = Depends(require_role(["viewer", "inspector", "admin"]))):
     conn = get_connection()
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM inspections WHERE id = %s", (id,))
@@ -2209,7 +2211,7 @@ async def get_presigned_upload(
 async def attach_s3_video(
     id: str,
     payload: Dict[str, Any],
-    user: Dict[str, Any] = Depends(require_role(["admin", "inspector"]))
+    user: Dict[str, Any] = Depends(require_role(["viewer", "inspector", "admin"]))
 ):
     """Attach an uploaded S3 video file to an inspection."""
     saved_filename = payload.get("saved_filename")
