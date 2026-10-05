@@ -72,7 +72,7 @@ def fetch_pipeline_payload(api_base: str, inspection_id: str) -> dict:
 
 
 def download_video_if_needed(api_base: str, task: dict, local_dir: str = "downloads") -> str:
-    """Stream download video footage from AWS S3 Presigned URL or API to local disk."""
+    """Stream download video footage from AWS S3 Presigned URL or API to local disk with failover."""
     tid = task.get("task_id") or task.get("inspection_id") or "DEMO-001"
     fn = task.get("filename") or f"{tid.lower()}.mp4"
     dest_path = os.path.join(local_dir, tid, fn)
@@ -81,41 +81,48 @@ def download_video_if_needed(api_base: str, task: dict, local_dir: str = "downlo
         return dest_path
 
     os.makedirs(os.path.dirname(dest_path), exist_ok=True)
-    direct_url = task.get("direct_video_url") or task.get("download_url") or f"{api_base.rstrip('/')}/api/cv/tasks/{tid}/video"
-
-    if direct_url.startswith("/"):
-        direct_url = f"{api_base.rstrip('/')}{direct_url}"
-
-    print(f"📥 [CV DOWNLOAD] Syncing footage for survey '{tid}' from S3/Server: {direct_url}")
     tmp_path = f"{dest_path}.tmp"
-    try:
-        req = urllib.request.Request(direct_url)
-        with urllib.request.urlopen(req, timeout=120) as resp, open(tmp_path, "wb") as f:
-            total_bytes = int(resp.headers.get("Content-Length", 0))
-            dl_bytes = 0
-            while True:
-                chunk = resp.read(1024 * 1024)
-                if not chunk:
-                    break
-                f.write(chunk)
-                dl_bytes += len(chunk)
-                if total_bytes > 0:
-                    pct = (dl_bytes / total_bytes) * 100
-                    sys.stdout.write(f"\r -> Progress: [{pct:5.1f}%] {dl_bytes / (1024*1024):.1f} / {total_bytes / (1024*1024):.1f} MB")
-                    sys.stdout.flush()
-        sys.stdout.write("\n")
-        os.replace(tmp_path, dest_path)
-        size_mb = os.path.getsize(dest_path) / (1024 * 1024)
-        print(f"✅ [DOWNLOAD COMPLETE] Saved local footage: '{dest_path}' ({size_mb:.2f} MB)")
-        return dest_path
-    except Exception as e:
-        print(f"⚠️ [DOWNLOAD WARN] Direct stream failed for '{tid}': {e}")
-        if os.path.exists(tmp_path):
-            try:
-                os.remove(tmp_path)
-            except Exception:
-                pass
-        return ""
+
+    candidate_urls = []
+    if task.get("direct_video_url"):
+        candidate_urls.append(task["direct_video_url"])
+    if task.get("download_url"):
+        candidate_urls.append(task["download_url"])
+    candidate_urls.append(f"/api/cv/tasks/{tid}/video")
+
+    for raw_url in candidate_urls:
+        url = raw_url if raw_url.startswith("http") else f"{api_base.rstrip('/')}{raw_url}"
+        print(f"📥 [CV DOWNLOAD] Syncing footage for survey '{tid}' from S3/Server: {url}")
+        try:
+            req = urllib.request.Request(url)
+            with urllib.request.urlopen(req, timeout=120) as resp, open(tmp_path, "wb") as f:
+                total_bytes = int(resp.headers.get("Content-Length", 0))
+                dl_bytes = 0
+                while True:
+                    chunk = resp.read(1024 * 1024)
+                    if not chunk:
+                        break
+                    f.write(chunk)
+                    dl_bytes += len(chunk)
+                    if total_bytes > 0:
+                        pct = (dl_bytes / total_bytes) * 100
+                        sys.stdout.write(f"\r -> Progress: [{pct:5.1f}%] {dl_bytes / (1024*1024):.1f} / {total_bytes / (1024*1024):.1f} MB")
+                        sys.stdout.flush()
+            sys.stdout.write("\n")
+            os.replace(tmp_path, dest_path)
+            size_mb = os.path.getsize(dest_path) / (1024 * 1024)
+            print(f"✅ [DOWNLOAD COMPLETE] Saved local footage: '{dest_path}' ({size_mb:.2f} MB)")
+            return dest_path
+        except Exception as e:
+            print(f"⚠️ [DOWNLOAD WARN] Candidate stream '{url}' failed for '{tid}': {e}. Trying fallback...")
+            if os.path.exists(tmp_path):
+                try:
+                    os.remove(tmp_path)
+                except Exception:
+                    pass
+
+    print(f"❌ [DOWNLOAD ERROR] All download candidates failed for survey '{tid}'.")
+    return ""
 
 
 def process_video_or_rtsp_stream(video_source: str, inspection_id: str, max_frames: int = 100) -> list:
