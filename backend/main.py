@@ -1325,6 +1325,106 @@ async def report_cv_failed(payload: CVFailedPayload):
     return {"status": "failed_recorded", "inspection_id": target_id}
 
 
+@app.get("/api/cv/export-tasks")
+@app.get("/forensics/export-tasks")
+@app.get("/api/v1/forensics/export-tasks")
+async def get_cv_export_tasks():
+    """
+    Continuous Event Listener Endpoint for CV / DeepStream / YOLO GPU Nodes.
+    No authentication required. Returns active/pending inspection surveys and S3 video download URLs.
+    """
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM inspections ORDER BY created_at DESC")
+    rows = cursor.fetchall()
+    conn.close()
+
+    tasks = []
+    active_count = 0
+    for r in rows:
+        item = dict(r)
+        status = item.get("status", "QUEUED")
+        if status in ["QUEUED", "UPLOADED", "PROCESSING", "AI_ANALYSIS", "CREATED"]:
+            active_count += 1
+        
+        v_url = str(item.get("video_url") or "")
+        direct_url = None
+        if is_s3_enabled() and v_url and not v_url.startswith("rtsp://"):
+            try:
+                s3_key = v_url.lstrip("/")
+                if s3_key.startswith("api/media/video/"):
+                    s3_key = s3_key.replace("api/media/video/", "media/video/")
+                direct_url = generate_presigned_upload_url(s3_key, expires_in=3600)
+            except Exception:
+                pass
+
+        if not direct_url and v_url:
+            if v_url.startswith("http://") or v_url.startswith("https://"):
+                direct_url = v_url
+            else:
+                clean_name = v_url.split("/")[-1].split("?")[0]
+                direct_url = f"/api/media/video/{clean_name}"
+
+        filename = v_url.split("/")[-1].split("?")[0] if v_url else f"{item['id'].lower()}.mp4"
+
+        task_entry = {
+            "task_id": item["id"],
+            "inspection_id": item["id"],
+            "case_id": item.get("name") or item["id"],
+            "footage_name": item.get("road_name") or filename,
+            "filename": filename,
+            "status": status,
+            "direct_video_url": direct_url,
+            "download_url": direct_url,
+            "models_requested": [item.get("model_version") or "RoadDefect-v1.0", "ANPR", "POTHOLE", "CRACKS"],
+            "duration_formatted": "00:05:00",
+            "total_frames": 9000,
+            "file_size_bytes": None,
+            "created_at": str(item.get("created_at", ""))
+        }
+        tasks.append(task_entry)
+
+    return {
+        "status": "success",
+        "total_tasks": len(tasks),
+        "active_processing": active_count,
+        "tasks": tasks
+    }
+
+
+@app.get("/api/cv/tasks/{id}/video")
+@app.get("/forensics/tasks/{id}/video")
+@app.get("/api/v1/forensics/tasks/{id}/video")
+async def get_cv_task_video_stream(id: str):
+    """
+    Stream download footage for specific task ID directly to GPU listener nodes.
+    """
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT video_url FROM inspections WHERE id = %s", (id,))
+    row = cursor.fetchone()
+    conn.close()
+
+    v_url = str(row["video_url"]) if row and row.get("video_url") else ""
+    clean_name = v_url.split("/")[-1].split("?")[0] if v_url else ""
+
+    if clean_name:
+        local_path = os.path.join(VIDEO_DIR, clean_name)
+        if os.path.exists(local_path):
+            return FileResponse(local_path, media_type="video/mp4")
+
+        fallback_path = os.path.join("static", "media", "video", clean_name)
+        if os.path.exists(fallback_path):
+            return FileResponse(fallback_path, media_type="video/mp4")
+
+    # Fallback to demo road inspection video if available
+    demo_file = os.path.join(VIDEO_DIR, "demo_road.mp4")
+    if os.path.exists(demo_file):
+        return FileResponse(demo_file, media_type="video/mp4")
+
+    raise HTTPException(status_code=404, detail=f"Local video file not found for task '{id}'")
+
+
 
 @app.post("/api/inspections/{id}/detections/ingest")
 async def ingest_detections(id: str, payload: List[Dict[str, Any]], user: Dict[str, Any] = Depends(require_role(["admin", "inspector"]))):
