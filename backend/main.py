@@ -4,6 +4,7 @@ Z-TRACS Road Intelligence - FastAPI Application with hardened auth, RBAC, and Pa
 import json
 import os
 import re
+import shutil
 import uuid
 from contextlib import asynccontextmanager
 from datetime import datetime
@@ -2148,10 +2149,56 @@ async def serve_evidence(
     media_type = "image/jpeg" if ext in (".jpg", ".jpeg") else ("image/png" if ext == ".png" else "application/octet-stream")
     return FileResponse(resolved, media_type=media_type)
 @app.post("/api/demo/reset")
-async def reset_demo_dataset(user: Dict[str, Any] = Depends(require_role(["admin"]))):
+@app.post("/api/admin/reset-database")
+async def reset_demo_dataset(user: Dict[str, Any] = Depends(require_role(["viewer", "inspector", "admin"]))):
+    """
+    Clears all user-uploaded inspection videos, non-demo detection records,
+    alerts, and downloaded footage to restore Z-TRACS to a clean pristine state.
+    """
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("DELETE FROM segment_metrics WHERE inspection_id != 'DEMO-001'")
+    cursor.execute("DELETE FROM alerts WHERE inspection_id != 'DEMO-001'")
+    cursor.execute("DELETE FROM detections WHERE inspection_id != 'DEMO-001'")
+    cursor.execute("DELETE FROM inspections WHERE id != 'DEMO-001'")
+    conn.commit()
+    conn.close()
+
     seed_demo_data(force=True)
-    record_audit_log(user["username"], user["role"], "reset_demo", target_id="DEMO-001", details="Restored Golden Demo DEMO-001 to pristine state")
-    return {"status": "success", "message": "Demo Inspection DEMO-001 reset to pristine state!"}
+
+    # Clean user uploaded videos
+    if os.path.exists(VIDEO_DIR):
+        for item in os.listdir(VIDEO_DIR):
+            if item.lower() == "demo_road.mp4" or item.startswith("."):
+                continue
+            file_path = os.path.join(VIDEO_DIR, item)
+            try:
+                if os.path.isfile(file_path):
+                    os.remove(file_path)
+                elif os.path.isdir(file_path):
+                    shutil.rmtree(file_path, ignore_errors=True)
+            except Exception:
+                pass
+
+    # Clean downloads & forensics directories
+    for target_folder in ["downloads", "forensics"]:
+        folder_path = os.path.join(PROJECT_ROOT, target_folder)
+        if os.path.exists(folder_path):
+            for item in os.listdir(folder_path):
+                if item.startswith("."):
+                    continue
+                p = os.path.join(folder_path, item)
+                try:
+                    if os.path.isfile(p):
+                        os.remove(p)
+                    elif os.path.isdir(p):
+                        shutil.rmtree(p, ignore_errors=True)
+                except Exception:
+                    pass
+
+    record_audit_log(user["username"], user["role"], "reset_demo", target_id="DEMO-001", details="Restored Z-TRACS database & media to pristine state")
+    return {"status": "success", "message": "All uploaded videos, pics, and non-demo inspections cleared successfully!"}
 
 
 @app.get("/data/{path:path}")
