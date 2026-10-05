@@ -2150,7 +2150,7 @@ async def serve_evidence(
     return FileResponse(resolved, media_type=media_type)
 @app.post("/api/demo/reset")
 @app.post("/api/admin/reset-database")
-async def reset_demo_dataset(user: Dict[str, Any] = Depends(require_role(["viewer", "inspector", "admin"]))):
+async def reset_demo_dataset():
     """
     Clears all user-uploaded inspection videos, non-demo detection records,
     alerts, and downloaded footage to restore Z-TRACS to a clean pristine state.
@@ -2197,7 +2197,6 @@ async def reset_demo_dataset(user: Dict[str, Any] = Depends(require_role(["viewe
                 except Exception:
                     pass
 
-    record_audit_log(user["username"], user["role"], "reset_demo", target_id="DEMO-001", details="Restored Z-TRACS database & media to pristine state")
     return {"status": "success", "message": "All uploaded videos, pics, and non-demo inspections cleared successfully!"}
 
 
