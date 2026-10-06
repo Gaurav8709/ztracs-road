@@ -159,6 +159,8 @@ app.add_middleware(SecurityHeadersMiddleware)
 app.mount("/app", StaticFiles(directory=FRONTEND_DIR), name="frontend_app")
 app.mount("/css", StaticFiles(directory=os.path.join(FRONTEND_DIR, "css")), name="frontend_css")
 app.mount("/js", StaticFiles(directory=os.path.join(FRONTEND_DIR, "js")), name="frontend_js")
+if os.path.isdir(os.path.join(FRONTEND_DIR, "img")):
+    app.mount("/img", StaticFiles(directory=os.path.join(FRONTEND_DIR, "img")), name="frontend_img")
 if os.path.isdir(os.path.join(FRONTEND_DIR, "vendor")):
     app.mount("/vendor", StaticFiles(directory=os.path.join(FRONTEND_DIR, "vendor")), name="frontend_vendor")
 
