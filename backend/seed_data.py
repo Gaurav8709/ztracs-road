@@ -378,5 +378,15 @@ def seed_demo_data(force: bool = False):
     conn.close()
     print("Seeded Demo Inspection DEMO-001 successfully!")
 
+    # Auto-sync local assets to S3 if S3 storage is enabled
+    try:
+        from backend.s3_client import is_s3_enabled, sync_local_assets_to_s3
+        if is_s3_enabled():
+            static_dir = os.path.join(project_root, "static")
+            sync_res = sync_local_assets_to_s3(static_dir)
+            print(f"☁️ [S3 SYNC] Synced assets to S3 bucket: {sync_res}")
+    except Exception as exc:
+        print(f"⚠️ [S3 SYNC WARN] Could not sync assets to S3: {exc}")
+
 if __name__ == "__main__":
     seed_demo_data(force=True)
