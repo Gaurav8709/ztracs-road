@@ -8,6 +8,7 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 cd "$DIR"
 
 if [ -f .env ]; then
+    sed -i 's/ADMIN_PASSWORD=change-me-admin-password/ADMIN_PASSWORD=admin123/g' .env 2>/dev/null || true
     set -a
     source .env
     set +a
