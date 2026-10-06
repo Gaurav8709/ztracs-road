@@ -141,7 +141,7 @@ JWT_SECRET=change-me-to-a-secure-random-secret-key-at-least-32-chars
 ADMIN_USERNAME=admin
 
 # Default administrator password (minimum 8 characters)
-ADMIN_PASSWORD=change-me-admin-password
+ADMIN_PASSWORD=admin123
 
 # Secret key for signing temporary media URLs (defaults to JWT_SECRET if unset)
 MEDIA_SIGNING_SECRET=optional-media-signing-secret-key
@@ -273,7 +273,7 @@ Backend API and frontend static assets are served together by FastAPI on port 80
 ./run.sh
 ```
 - Server URL: **`http://127.0.0.1:8000`**
-- Default credentials (from `.env.example`): Username **`admin`**, Password **`change-me-admin-password`**
+- Default credentials (from `.env.example`): Username **`admin`**, Password **`admin123`**
 - All API and asset routes resolve locally on the same origin (`API_BASE=""`).
 
 #### Mode B: Split Mode (Frontend & Backend Separated)
@@ -290,7 +290,7 @@ Start backend and frontend as separate services:
    ```
 - Frontend UI: **`http://127.0.0.1:3000`**
 - Backend API: **`http://127.0.0.1:8000`**
-- Default credentials (from `.env.example`): Username **`admin`**, Password **`change-me-admin-password`**
+- Default credentials (from `.env.example`): Username **`admin`**, Password **`admin123`**
 - `run-frontend.sh` automatically injects `window.API_BASE` for all fetch requests and media URLs without modifying any tracked files.
 - `ALLOWED_ORIGINS` in `.env` must include `http://127.0.0.1:3000,http://localhost:3000` (included by default).
 

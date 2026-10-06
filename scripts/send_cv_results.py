@@ -28,7 +28,7 @@ import sys
 import urllib.request
 import urllib.error
 
-def get_auth_token(api_base: str, username: str = "admin", password: str = "change-me-admin-password") -> str:
+def get_auth_token(api_base: str, username: str = "admin", password: str = "admin123") -> str:
     """Authenticate with Z-TRACS API to obtain a JWT Bearer Token."""
     login_url = f"{api_base.rstrip('/')}/api/auth/login"
     payload = json.dumps({"username": username, "password": password}).encode("utf-8")
@@ -106,7 +106,7 @@ def main():
 
 
     parser.add_argument("--username", default="admin", help="Admin/Inspector Username")
-    parser.add_argument("--password", default="change-me-admin-password", help="Admin/Inspector Password")
+    parser.add_argument("--password", default="admin123", help="Admin/Inspector Password")
     parser.add_argument("--token", help="JWT Token (optional, overrides username/password)")
 
     args = parser.parse_args()

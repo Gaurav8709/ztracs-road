@@ -134,7 +134,7 @@ python scripts/send_cv_results.py \
   --json ai_results.json \
   --api-base http://127.0.0.1:8000 \
   --username admin \
-  --password change-me-admin-password
+  --password admin123
 ```
 
 ### 2. Send `processing_status.json`:
@@ -148,7 +148,7 @@ python scripts/send_cv_results.py \
 ```python
 from scripts.send_cv_results import get_auth_token, send_cv_payload
 
-token = get_auth_token("http://127.0.0.1:8000", "admin", "change-me-admin-password")
+token = get_auth_token("http://127.0.0.1:8000", "admin", "admin123")
 
 # Send status update
 send_cv_payload("http://127.0.0.1:8000", {

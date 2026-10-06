@@ -27,11 +27,11 @@
 <body class="bg-[#090d16] text-slate-100 flex flex-col min-h-screen">
 
   <!-- ================= TOP NAVIGATION BAR ================= -->
-  <header class="border-b border-slate-800 bg-[#0c1222]/90 backdrop-blur-md sticky top-0 z-50 px-6 py-3">
-    <div class="max-w-7xl mx-auto flex items-center justify-between">
+  <header class="border-b border-slate-800 bg-[#0c1222]/90 backdrop-blur-md sticky top-0 z-50 px-4 sm:px-6 py-2.5">
+    <div class="max-w-[1600px] w-full mx-auto flex items-center justify-between gap-3">
       
       <!-- Brand & Competition Tagline -->
-      <div class="flex items-center gap-3">
+      <div class="flex items-center gap-3 shrink-0">
         <div class="w-10 h-10 rounded-lg bg-gradient-to-tr from-sky-600 to-cyan-400 flex items-center justify-center font-black text-xl text-slate-950 shadow-lg shadow-cyan-500/20">
           Z
         </div>
@@ -49,7 +49,7 @@
       </div>
 
       <!-- Navigation Tabs (The 5 Main Screens per Section 39) -->
-      <nav class="hidden md:flex items-center gap-1 bg-slate-900/80 p-1 rounded-xl border border-slate-800">
+      <nav class="hidden md:flex items-center gap-1 bg-slate-900/80 p-1 rounded-xl border border-slate-800 shrink-0">
         <button class="nav-tab active" data-screen="screen-command">
           <span>Command Center</span>
         </button>
@@ -65,34 +65,34 @@
         <button class="nav-tab" data-screen="screen-evidence">
           <span>Evidence & Video Sync</span>
         </button>
-              <button class="nav-tab hidden" id="nav-tab-users" data-screen="screen-users">
+        <button class="nav-tab hidden" id="nav-tab-users" data-screen="screen-users">
           <span>Users</span>
         </button>
       </nav>
 
       <!-- Right Header Actions (Demo Mode & Role Switcher) -->
-      <div class="flex items-center gap-3">
+      <div class="flex items-center gap-2 sm:gap-3 shrink-0 ml-auto lg:ml-0">
         
         <!-- Section 38 Demo Mode Button / Active Survey Switcher -->
-        <div class="flex items-center gap-2 bg-slate-900/90 px-3 py-1.5 rounded-lg border border-amber-500/40 shadow-sm">
-          <span class="text-amber-400 text-xs font-bold flex items-center gap-1">⚡ Survey:</span>
-          <select class="survey-switcher-select bg-slate-950 text-amber-300 font-bold text-xs py-1 px-2 rounded border border-amber-500/40 focus:outline-none focus:border-amber-400 cursor-pointer">
+        <div class="flex items-center gap-1.5 bg-slate-900/90 px-2.5 py-1.5 rounded-lg border border-amber-500/40 shadow-sm shrink-0">
+          <span class="text-amber-400 text-xs font-bold flex items-center gap-1 shrink-0">⚡ Survey:</span>
+          <select class="survey-switcher-select max-w-[160px] sm:max-w-[220px] lg:max-w-[260px] truncate bg-slate-950 text-amber-300 font-bold text-xs py-1 px-2 rounded border border-amber-500/40 focus:outline-none focus:border-amber-400 cursor-pointer">
             <option value="DEMO-001">DEMO-001 (NH-48 Expressway)</option>
           </select>
         </div>
 
         <!-- User Profile & Real Role Badge & Logout (Requirement 4) -->
-        <div id="user-profile-badge" class="flex items-center gap-2 bg-slate-800/80 px-3 py-1.5 rounded-lg border border-slate-700 text-xs">
+        <div id="user-profile-badge" class="flex items-center gap-2 bg-slate-800/80 px-3 py-1.5 rounded-lg border border-slate-700 text-xs shrink-0">
           <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
           <span id="active-user-name" class="font-bold text-slate-200">admin</span>
           <span id="active-role-badge" class="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-cyan-950 text-cyan-400 border border-cyan-800 uppercase">ADMIN</span>
-          <button id="btn-logout"  class="ml-1 text-slate-400 hover:text-red-400 font-semibold transition" title="Log out">
+          <button id="btn-logout" class="ml-1 text-slate-400 hover:text-red-400 font-semibold transition" title="Log out">
             Logout
           </button>
         </div>
 
         <!-- Alert Bell (Section 25) -->
-        <button data-nav="screen-evidence" class="relative p-2 rounded-lg bg-slate-800/60 hover:bg-slate-800 text-slate-300 hover:text-white transition">
+        <button data-nav="screen-evidence" class="relative p-2 rounded-lg bg-slate-800/60 hover:bg-slate-800 text-slate-300 hover:text-white transition shrink-0">
           <span class="text-sm">🔔</span>
           <span id="alert-badge" class="absolute -top-1 -right-1 bg-red-500 text-white font-black text-[9px] w-4 h-4 rounded-full flex items-center justify-center animate-pulse">
             1

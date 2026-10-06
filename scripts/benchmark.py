@@ -97,7 +97,7 @@ def main():
 
     # Authenticate admin using ADMIN_USERNAME / ADMIN_PASSWORD only
     admin_user = os.getenv("ADMIN_USERNAME", "admin")
-    admin_pw = os.getenv("ADMIN_PASSWORD", "change-me-admin-password")
+    admin_pw = os.getenv("ADMIN_PASSWORD", "admin123")
     login_res = client.post("/api/auth/login", json={"username": admin_user, "password": admin_pw})
     if login_res.status_code != 200:
         raise RuntimeError(f"Benchmark authentication failed for user '{admin_user}': {login_res.status_code} {login_res.text}")
